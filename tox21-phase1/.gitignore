@@ -1,0 +1,9 @@
+data/raw/*
+!data/raw/.gitkeep
+features/*.npy
+features/descriptor_names.txt
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.DS_Store
+
