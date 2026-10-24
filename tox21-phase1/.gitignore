@@ -6,4 +6,7 @@ __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
 .DS_Store
+.venv/
 
+# Ranajeet's personal, local project modification log
+/ranajeet.md
