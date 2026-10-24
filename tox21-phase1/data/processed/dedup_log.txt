@@ -1,1 +1,6 @@
-Duplicate-removal log will be populated by scripts/01_clean_and_split.py.
+raw_rows: 7831
+invalid_dropped: 8
+valid_after_parsing: 7823
+label_conflicts_set_to_nan: 44
+duplicate_rows_removed: 114
+clean_rows: 7709
