@@ -1,2 +1,85 @@
-\section{Features}
-Morgan fingerprints and raw RDKit descriptors are generated in canonical row order.
+\section{Feature Engineering and Molecular Representation}
+\label{sec:features}
+
+Predicting toxicological outcomes across heterogeneous biochemical endpoints requires numerical molecular representations that balance localized chemical substructures with global macroscopic physicochemical behavior. To provide a rigorous tabular baseline for the Tox21 benchmark, we designed, implemented, and validated a leak-free molecular feature engineering pipeline comprising two complementary representations: Circular Morgan fingerprints and preprocessed 2D RDKit molecular descriptors.
+
+\subsection{Circular Morgan Fingerprints}
+\label{subsec:morgan}
+Morgan fingerprints~\cite{tox21}, conceptually equivalent to Extended-Connectivity Fingerprints (ECFP), represent localized chemical environments through iterative radial topological hashing. Beginning with atomic invariants (element type, formal charge, hybridization, degree, and aromaticity at radius $r = 0$), the algorithm iteratively aggregates neighboring connectivity information up to radius $r = 2$ (representing topological diameters up to 4 bonds, ECFP4).
+
+To ensure deterministic encoding across the 7,709 unique molecules, fingerprints were generated using RDKit's modern \texttt{rdFingerprintGenerator} API with fixed parameters:
+\begin{itemize}
+    \item Topological radius: $r = 2$.
+    \item Dimensionality: $B = 2{,}048$ bits.
+    \item Representation: Binary indicator vectors ($x_{ij} \in \{0, 1\}$).
+    \item Storage format: \texttt{uint8} NumPy array of shape $(7{,}709, 2{,}048)$.
+\end{itemize}
+
+Empirical evaluation of the 2,048-bit Morgan vectors across the cleaned Tox21 dataset revealed an average on-bit density of $\mu = 49.34 \pm 18.21$ bits per molecule (median 47.0, range $[1, 137]$). Across the entire library, 307 bit positions ($14.99\%$) were never activated by any compound, while the most prevalent bit was activated in $76.88\%$ of molecules.
+
+\subsection{2D RDKit Molecular Descriptors}
+\label{subsec:descriptors}
+While circular fingerprints encode discrete local substructural motifs, toxicokinetics (absorption, biological membrane permeability, and non-specific cellular partitioning) are fundamentally driven by macroscopic physicochemical properties. We computed the complete suite of 217 2D molecular descriptors provided by RDKit's \texttt{Descriptors.descList}, capturing:
+\begin{itemize}
+    \item Bulk molecular properties: Molecular weight (\texttt{MolWt}), topological polar surface area (\texttt{TPSA}), molar refractivity (\texttt{MolMR}), and lipophilicity ($\text{SlogP}$ / \texttt{MolLogP}).
+    \item Electronic and charge distribution: Partial charge extrema (\texttt{MaxPartialCharge}, \texttt{MinPartialCharge}) and electrotopological state (E-State) indices.
+    \item Connectivity and shape topology: Balaban $J$, Kier-Hall indices (\texttt{Kappa1}, \texttt{Kappa2}, \texttt{Kappa3}), and Bertz complexity (\texttt{BertzCT}).
+    \item Functional group and atom counts: Hydrogen bond donors/acceptors (\texttt{NumHDonors}, \texttt{NumHAcceptors}), rotatable bonds (\texttt{NumRotatableBonds}), and aromatic/aliphatic ring counts.
+\end{itemize}
+Raw descriptors were stored unscaled and unimputed as an uncompressed \texttt{float64} matrix of shape $(7{,}709, 217)$ alongside an authoritative column index manifest (\texttt{descriptor_names.txt}).
+
+\subsection{Descriptor Quality Audit and Leak-Free Preprocessing}
+\label{subsec:preprocessing}
+An exhaustive audit of the raw 217 descriptor columns identified four critical data-quality pathologies that invalidate naive downstream estimators:
+\begin{enumerate}
+    \item \textbf{Missing values (NaN):} 1,224 cells across 107 molecules evaluated to NaN due to undefined mathematical terms (e.g., partial charges on disconnected organometallics or coordination salts).
+    \item \textbf{Infinite values ($\pm\infty$):} 6 cells evaluated to infinity in specific topological index formulations where the divisor approaches zero.
+    \item \textbf{Constant-zero columns:} Three descriptors evaluated to zero across all 7,709 molecules: \texttt{SMR_VSA8}, \texttt{SlogP_VSA9}, and \texttt{fr_diazo}.
+    \item \textbf{Extreme outliers:} Heavy-tailed distributions spanning multiple orders of magnitude (e.g., max values exceeding $10^6$ in raw graph complexity indices).
+\end{enumerate}
+
+To eliminate data leakage between train, validation, and test partitions, we encapsulated descriptor transformations inside a custom, scikit-learn-compatible \texttt{DescriptorPreprocessor} fitted exclusively on the training partition ($n = 6{,}167$). The transformation executes in strict sequence:
+\begin{equation}
+    X_{\text{raw}} \xrightarrow{\text{copy}} X \xrightarrow{\pm\infty \to \text{NaN}} X' \xrightarrow{\text{drop all-NaN}} X_1
+\end{equation}
+\begin{equation}
+    X_2 = \text{Impute}(X_1, \mathbf{m}_{\text{train}})
+\end{equation}
+\begin{equation}
+    X_3 = \text{clip}(X_2, \mathbf{p}_{\text{train}}^{1.0\%}, \mathbf{p}_{\text{train}}^{99.9\%})
+\end{equation}
+\begin{equation}
+    X_4 = \text{Filter}(X_3, \sigma_{\text{train}} > 10^{-8})
+\end{equation}
+\begin{equation}
+    Z = \frac{X_4 - \boldsymbol{\mu}_{\text{train}}}{\boldsymbol{\sigma}_{\text{train}}}
+\end{equation}
+
+On the primary scaffold training split, four features were dropped due to near-constant variance ($\sigma \le 10^{-8}$): the three dataset-wide constants (\texttt{SMR_VSA8}, \texttt{SlogP_VSA9}, \texttt{fr_diazo}) and an additional partition-specific constant (\texttt{fr_azide}). Exactly 213 sanitized, finite descriptors were retained, yielding standardized features with zero training mean and unit variance.
+
+\subsection{Multi-Task Random Forest Architecture}
+\label{subsec:rf}
+The Random Forest baseline was implemented via \texttt{MultiTaskRandomForest} to address two domain-specific constraints of Tox21:
+\begin{enumerate}
+    \item \textbf{Extreme Class Imbalance:} Active toxic compounds represent a small fraction of tested molecules (e.g., $3.4\%$ positive for NR-AR, $4.3\%$ for NR-AR-LBD). To counteract positive under-representation without distorting empirical distributions, we parameterized tree construction with \texttt{class_weight="balanced_subsample"}, which reweights class frequencies dynamically within each bootstrap sample.
+    \item \textbf{Sparse Target Label Matrices:} Unmeasured biological endpoints are represented as NaN in the label matrix. Our model trains independent binary \texttt{RandomForestClassifier} estimators per task, explicitly filtering out missing labels and training solely on observed samples.
+\end{enumerate}
+The hyperparameter search space was frozen to the agreed 8-configuration budget varying tree depth ($None, 30$), leaf size ($1, 3, 5$), and ensemble size ($300, 500$), using validation PR-AUC for configuration selection.
+
+\subsection{Reproducibility, Alignment, and Manifest Safeguards}
+\label{subsec:safeguards}
+To eliminate silent row misalignment or split leakage across team members:
+\begin{itemize}
+    \item A cryptographic SHA-256 hash was generated over the ordered sequence of 7,709 \texttt{(mol_id, smiles)} pairs: \texttt{0d406f18bc44ede1212741b1abcb1cb00982d8ea10a65a54363ad6a905a4d372}.
+    \item The shared loader \texttt{load_features(kind, split, seed)} validates this hash against \texttt{features/feature_manifest.json} prior to partition indexing, raising an explicit error upon any divergence.
+    \item Atomic file writes via temporary staging files prevent partial corruption during batch feature generation.
+\end{itemize}
+
+\subsection{Scientific Limitations}
+\label{subsec:limitations}
+Three methodological caveats warrant explicit acknowledgment:
+\begin{enumerate}
+    \item \textbf{Bit Collisions:} Hashing an infinite chemical substructure space into $B = 2{,}048$ bins inevitably causes modulo collisions, wherein distinct chemical fragments map to identical bit indices.
+    \item \textbf{Descriptor Collinearity:} High pairwise collinearity ($|r| \ge 0.95$ across 38 descriptor pairs, including molecular weight versus heavy atom count and surface area metrics) can induce variance in tree splitting.
+    \item \textbf{Impurity-Based Feature Attribution:} Mean decrease in impurity (Gini importance) can disproportionately favor features with higher baseline occurrence or continuous granularity. Substructure attributions derived from bit importance must be treated as correlative hypotheses rather than verified causal pharmacophores.
+\end{enumerate}

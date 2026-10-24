@@ -1,0 +1,56 @@
+{
+  "dataset": {
+    "name": "Tox21",
+    "clean_csv_path": "/Users/ranajeetroy/Desktop/Molecular-Toxicity-Prediction/tox21-phase1/data/processed/tox21_clean.csv",
+    "n_molecules": 7709,
+    "row_hash_sha256": "0d406f18bc44ede1212741b1abcb1cb00982d8ea10a65a54363ad6a905a4d372"
+  },
+  "environment": {
+    "rdkit_version": "2026.09.1",
+    "numpy_version": "2.4.6",
+    "pandas_version": "3.1.0",
+    "sklearn_version": "1.9.1"
+  },
+  "fingerprints": {
+    "type": "Morgan",
+    "radius": 2,
+    "n_bits": 2048,
+    "representation": "binary",
+    "dtype": "uint8",
+    "artifact_path": "/Users/ranajeetroy/Desktop/Molecular-Toxicity-Prediction/tox21-phase1/features/morgan_2048.npy",
+    "shape": [
+      7709,
+      2048
+    ]
+  },
+  "descriptors": {
+    "source": "rdkit.Chem.Descriptors.descList",
+    "n_raw_descriptors": 217,
+    "dtype": "float64",
+    "artifact_path": "/Users/ranajeetroy/Desktop/Molecular-Toxicity-Prediction/tox21-phase1/features/descriptors_raw.npy",
+    "shape": [
+      7709,
+      217
+    ],
+    "nan_cells": 1224,
+    "inf_cells": 6,
+    "non_finite_rows": 107,
+    "constant_zero_descriptors": [
+      "SMR_VSA8",
+      "SlogP_VSA9",
+      "fr_diazo"
+    ]
+  },
+  "preprocessing_pipeline": {
+    "steps": [
+      "1. Copy input matrix",
+      "2. Normalize non-finite values (+/- inf -> NaN)",
+      "3. Remove all-missing columns in training partition",
+      "4. Median imputation using training partition medians",
+      "5. Percentile clipping (1.0% to 99.9%) fitted on training partition",
+      "6. Remove zero/near-constant features (std <= 1e-8 on training partition)",
+      "7. Standardize with training partition mean and population standard deviation",
+      "8. Validate finiteness of float32 output"
+    ]
+  }
+}
