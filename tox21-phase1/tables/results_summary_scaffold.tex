@@ -1,0 +1,16 @@
+\begin{table}
+\caption{Mean test performance on Scaffold split (averaged across 12 endpoints and 3 seeds)}
+\label{tab:results_scaffold}
+\begin{tabular}{llrrrr}
+\toprule
+model & feature_set & ROC_AUC_mean & ROC_AUC_std & PR_AUC_mean & PR_AUC_std \\
+\midrule
+Logistic Regression & Morgan Only & 0.715600 & 0.000000 & 0.311600 & 0.000000 \\
+Logistic Regression & Morgan + Desc & 0.731700 & 0.000000 & 0.312200 & 0.000000 \\
+Random Forest & Morgan Only & 0.728800 & 0.006300 & 0.370300 & 0.001600 \\
+Random Forest & Morgan + Desc & 0.776200 & 0.002000 & 0.403500 & 0.004200 \\
+XGBoost & Morgan Only & 0.702000 & 0.002500 & 0.318000 & 0.002000 \\
+XGBoost & Morgan + Desc & 0.760600 & 0.003600 & 0.401000 & 0.004500 \\
+\bottomrule
+\end{tabular}
+\end{table}
