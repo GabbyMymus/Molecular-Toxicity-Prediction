@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from .config import CLEAN_PATH, FEATURES_PATH, N_BITS, SPLITS_PATH
+from .config import CLEAN_PATH, FEATURES_PATH, N_BITS, ROOT, SPLITS_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -422,10 +422,16 @@ def build_feature_manifest(
             if stds[i] <= 1e-8
         ]
 
+    def _rel(p: Path) -> str:
+        try:
+            return str(p.relative_to(ROOT))
+        except ValueError:
+            return str(p)
+
     manifest = {
         "dataset": {
             "name": "Tox21",
-            "clean_csv_path": str(clean_csv_path),
+            "clean_csv_path": _rel(clean_csv_path),
             "n_molecules": len(df),
             "row_hash_sha256": row_hash,
         },
@@ -441,14 +447,14 @@ def build_feature_manifest(
             "n_bits": N_BITS,
             "representation": "binary",
             "dtype": "uint8",
-            "artifact_path": str(morgan_path),
+            "artifact_path": _rel(morgan_path),
             "shape": morgan_shape,
         },
         "descriptors": {
             "source": "rdkit.Chem.Descriptors.descList",
             "n_raw_descriptors": len(descriptor_names),
             "dtype": "float64",
-            "artifact_path": str(desc_path),
+            "artifact_path": _rel(desc_path),
             "shape": desc_shape,
             "nan_cells": nan_cells,
             "inf_cells": inf_cells,

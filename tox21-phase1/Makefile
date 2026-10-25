@@ -1,13 +1,16 @@
 PYTHON ?= python
 export PYTHONPATH := $(CURDIR)
 
-.PHONY: setup data features tune final-test figures all test
+.PHONY: setup data eda features tune final-test figures all test
 
 setup:
 	$(PYTHON) -m pip install -r requirements.txt
 
 data:
 	$(PYTHON) scripts/01_clean_and_split.py
+
+eda:
+	$(PYTHON) scripts/06_dataset_eda.py
 
 features:
 	$(PYTHON) scripts/02_build_features.py
@@ -23,7 +26,7 @@ final-test:
 figures:
 	$(PYTHON) scripts/05_make_figures.py
 
-all: data features tune final-test figures
+all: data eda features tune final-test figures
 
 # pytest owns the name "test"
 test:

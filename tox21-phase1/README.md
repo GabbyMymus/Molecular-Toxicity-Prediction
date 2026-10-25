@@ -18,19 +18,27 @@ systems; keep this in mind when reading scaffold results.
 
 ## Setup
 
-Run everything from this directory (`tox21-phase1/`). Developed and tested on Python 3.14.
+The project lives in the `tox21-phase1/` subfolder of the repository, and every command below is run from
+there. **Python 3.11 or newer** is needed: `scikit-learn>=1.8` does not install on Python 3.9 (the macOS system
+`python3`), and 3.10 was not tested. Developed and tested on Python 3.14.
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-make setup            # pip install -r requirements.txt
+git clone https://github.com/GabbyMymus/Molecular-Toxicity-Prediction.git
+cd Molecular-Toxicity-Prediction/tox21-phase1
+python3 -m venv .venv && source .venv/bin/activate   # inside the venv, `python` works
+make setup                                           # pip install -r requirements.txt
 ```
 
 - **scikit-learn >= 1.8 is required.** Logistic Regression selects the L1 or L2 penalty from `l1_ratio`
   only from 1.8; on older versions the two L1 configurations in the grid silently fit as L2. This was
   checked on 1.3.2 to 1.9.1.
-- On macOS, XGBoost needs the OpenMP runtime: `brew install libomp`.
+- **macOS needs `brew install libomp` for XGBoost.** Without it XGBoost cannot load: `make test` still runs
+  (the 4 XGBoost-specific tests are skipped), but `make tune` and `make final-test` fail on the XGBoost model.
 - The raw download is not committed (`data/raw/` is ignored). The cleaned data and splits are committed,
-  so you do not need the raw file to run the experiments.
+  so you do not need the raw file to run the experiments. To rebuild them from the raw file, fetch it once
+  with `PYTHONPATH=. python scripts/01_clean_and_split.py --download` (it saves `tox21.csv.gz` from the
+  DeepChem copy into `data/raw/` and regenerates the data and splits), or place the file there yourself.
+  `make data` and `make all` do not download; they stop with a `FileNotFoundError` if the raw file is missing.
 
 ## Run
 
@@ -43,8 +51,9 @@ Every stage has one Make target:
 | `make final-test` | **Touches the test set.** Runs `scripts/04_final_test.py --i-know-this-touches-test`. Writes `results/results_test.csv` and `results/preds/`. |
 | `make figures` | Report figures from `results/results_test.csv`. |
 | `make test` | The pytest suite. Run `make features` first; two tests read the built feature arrays. |
-| `make data` | Re-creates the cleaned CSV and splits from the raw file (see Known issues before using). |
-| `make all` | `data features tune final-test figures`. |
+| `make data` | Re-creates the cleaned CSV, deduplication audit, and both canonical splits from `data/raw/tox21.csv` (or `.csv.gz`). |
+| `make eda` | Generates dataset and scaffold EDA figures in `figures/`. |
+| `make all` | `data eda features tune final-test figures`. Needs the raw file for the `data` step (see Setup). |
 
 ### The test-set protocol
 
@@ -84,7 +93,9 @@ parallel runs do not overwrite each other.
 | Final runs | seeds 0, 1, 2 on both the scaffold and the random split |
 | Metrics | per endpoint ROC AUC and PR AUC on labeled rows; NaN when an evaluation set has a single class |
 | Grid size | 3 models x 2 feature sets x 2 splits x 3 seeds x 12 endpoints = 432 fitted classifiers (plus tuning) |
-### 1. Molecular Representation & Feature Synergy
+
+## Feature engineering summary
+
 - **Circular Morgan Fingerprints (ECFP4 Equivalent, 2048-bit, Radius 2):** Tox21 molecules exhibit an average active bit density of $29.75 \pm 16.41$ bits per molecule (median 26.0, range $[1, 160]$). All 2,048 bit positions are activated across the dataset (0 unused bits), while the top motif appears in $71.73\%$ of compounds.
 - **RDKit 2D Molecular Descriptors (217 raw features):** Empirical analysis revealed 1,224 NaN cells and 6 infinite cells across 107 compounds (caused by undefined partial charges or zero-division topological indices). 3 descriptors are constant zero across all 7,709 molecules (`SMR_VSA8`, `SlogP_VSA9`, `fr_diazo`), and `fr_azide` is near-constant in scaffold training, leaving 213 retained descriptors.
 - **Hybrid Modality (`morgan+desc`, 2,261 features):** Combining localized topological fragments (Morgan) with bulk physicochemical parameters (lipophilicity $\log P$, polar surface area, molecular weight) provides complementary inductive biases without expanding dimensionality beyond tabular model feasibility.
@@ -141,21 +152,13 @@ tox21-phase1/
 ## Tests
 
 ```bash
+make eda
 make features
 make test
 ```
 
 The harness tests use synthetic data, including throwaway git repositories that exercise every refusal
 condition of the final-test script.
-
-## Known issues
-
-- `make data` regenerates the cleaned CSV and splits from the raw file, but the committed
-  `data/splits/scaffold_seed0.json` is not what the current `src/splits.py::scaffold_split` produces
-  (it yields a different, unbalanced split). Treat the committed files in `data/processed/` and
-  `data/splits/` as canonical and do not overwrite them until the data code is aligned.
-- `make features` rewrites the tracked `features/feature_manifest.json` with local absolute paths; run
-  `git checkout features/feature_manifest.json` afterwards.
 
 ## Team
 

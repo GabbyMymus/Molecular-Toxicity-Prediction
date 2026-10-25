@@ -1,4 +1,4 @@
-"""Scaffold and random train/validation/test splits."""
+"""Deterministic scaffold and random train/validation/test splits."""
 
 from __future__ import annotations
 
@@ -11,32 +11,40 @@ from .config import SPLITS_PATH
 
 
 def _pack(train, val, test):
-    return {"train": list(map(int, train)), "val": list(map(int, val)), "test": list(map(int, test))}
+    return {"train": sorted(map(int, train)), "val": sorted(map(int, val)), "test": sorted(map(int, test))}
 
 
 def random_split(n: int, seed: int = 0) -> dict[str, list[int]]:
-    rng = np.random.default_rng(seed)
-    indices = rng.permutation(n)
-    n_test, n_val = max(1, round(n * 0.1)), max(1, round(n * 0.1))
-    return _pack(indices[: n - n_val - n_test], indices[n - n_val - n_test : n - n_test], indices[-n_test:])
+    """Return a deterministic 80/10/10 row split with stable sorted indices."""
+    if n < 3:
+        raise ValueError("At least three rows are required")
+    indices = np.random.default_rng(seed).permutation(n)
+    train_end, val_end = int(0.8 * n), int(0.9 * n)
+    return _pack(indices[:train_end], indices[train_end:val_end], indices[val_end:])
 
 
 def scaffold_split(scaffolds: list[str], seed: int = 0) -> dict[str, list[int]]:
-    groups = {}
+    """Greedily place largest whole scaffold groups against 80/10/10 cutoffs.
+
+    Ties are stable by first row index. The empty scaffold is one group, so all
+    acyclic molecules remain in the same partition.
+    """
+    n = len(scaffolds)
+    if n < 3:
+        raise ValueError("At least three rows are required")
+    grouped: dict[str, list[int]] = {}
     for index, scaffold in enumerate(scaffolds):
-        groups.setdefault(scaffold, []).append(index)
-    groups = list(groups.values())
-    np.random.default_rng(seed).shuffle(groups)
-    target_test = max(1, round(len(scaffolds) * 0.1))
-    target_val = max(1, round(len(scaffolds) * 0.1))
-    test, val, train = [], [], []
+        grouped.setdefault(scaffold or "", []).append(index)
+    groups = sorted(grouped.values(), key=lambda rows: (len(rows), -rows[0]), reverse=True)
+    train_cutoff, val_cutoff = 0.8 * n, 0.9 * n
+    train, val, test = [], [], []
     for group in groups:
-        if len(test) < target_test:
-            test.extend(group)
-        elif len(val) < target_val:
+        if len(train) + len(group) <= train_cutoff:
+            train.extend(group)
+        elif len(train) + len(val) + len(group) <= val_cutoff:
             val.extend(group)
         else:
-            train.extend(group)
+            test.extend(group)
     return _pack(train, val, test)
 
 
