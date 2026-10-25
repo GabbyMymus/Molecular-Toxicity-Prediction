@@ -1,0 +1,16 @@
+\begin{table}
+\caption{Mean test performance on Random split (averaged across 12 endpoints and 3 seeds)}
+\label{tab:results_random}
+\begin{tabular}{llrrrr}
+\toprule
+model & feature_set & ROC_AUC_mean & ROC_AUC_std & PR_AUC_mean & PR_AUC_std \\
+\midrule
+Logistic Regression & Morgan Only & 0.821200 & 0.000000 & 0.482100 & 0.000000 \\
+Logistic Regression & Morgan + Desc & 0.840500 & 0.000000 & 0.481800 & 0.000000 \\
+Random Forest & Morgan Only & 0.836400 & 0.003900 & 0.503800 & 0.000600 \\
+Random Forest & Morgan + Desc & 0.860700 & 0.004500 & 0.545600 & 0.003800 \\
+XGBoost & Morgan Only & 0.807200 & 0.001300 & 0.504600 & 0.001700 \\
+XGBoost & Morgan + Desc & 0.862100 & 0.001900 & 0.564700 & 0.002100 \\
+\bottomrule
+\end{tabular}
+\end{table}

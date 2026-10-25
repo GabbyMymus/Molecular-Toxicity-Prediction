@@ -1,2 +1,150 @@
-\section{Results}
-Results are populated from \texttt{results/results\_test.csv}.
+\section{Results and Discussion}
+\label{sec:results}
+
+We report final test performance across the 432 experimental evaluations (3 model architectures $\times$ 2 feature sets $\times$ 2 splitting regimes $\times$ 3 random seeds $\times$ 12 toxicity endpoints). Test metrics are computed strictly using the frozen configurations selected during scaffold validation tuning (commit \texttt{041892c}). All performance tables present the mean and sample standard deviation across random seeds 0, 1, and 2.
+
+\subsection{Overall Benchmark Performance on Scaffold Split}
+Table~\ref{tab:results_scaffold} presents the primary benchmark results on the scaffold test partition ($n=771$), representing the hardest and most realistic evaluation regime where test compounds belong to completely unseen core chemotypes.
+
+\begin{table}[t]
+\caption{Mean test performance on the Bemis--Murcko Scaffold split (averaged across 12 endpoints and seeds 0, 1, 2; best in bold).}
+\label{tab:results_scaffold}
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Model & Feature Set & ROC AUC & Std & PR AUC & Std \\
+\midrule
+Logistic Regression & Morgan Only & 0.7156 & 0.0000 & 0.3116 & 0.0000 \\
+Logistic Regression & Morgan + Desc & 0.7317 & 0.0000 & 0.3122 & 0.0000 \\
+Random Forest & Morgan Only & 0.7288 & 0.0063 & 0.3703 & 0.0016 \\
+Random Forest & Morgan + Desc & \textbf{0.7762} & 0.0020 & \textbf{0.4035} & 0.0042 \\
+XGBoost & Morgan Only & 0.7020 & 0.0025 & 0.3180 & 0.0020 \\
+XGBoost & Morgan + Desc & 0.7606 & 0.0036 & 0.4010 & 0.0045 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Several core findings emerge from this comparison:
+\begin{enumerate}
+    \item \textbf{Random Forest Superiority:} Multi-task Random Forest trained on hybrid features (\texttt{morgan+desc}) achieves the highest overall predictive performance across both evaluation metrics, recording an average ROC AUC of $0.7762 \pm 0.0020$ and PR AUC of $0.4035 \pm 0.0042$.
+    \item \textbf{Gradient Boosting Competitiveness:} XGBoost trained on hybrid features achieves near-identical PR AUC ($0.4010 \pm 0.0045$) and strong ROC AUC ($0.7606 \pm 0.0036$), demonstrating that tree ensembles are uniformly well-suited for tabular multi-task toxicity prediction.
+    \item \textbf{Linear Baseline Competitiveness:} L2-regularized Logistic Regression achieves an average ROC AUC of $0.7317$ on hybrid features, providing a competitive, low-variance linear benchmark. Because liblinear's coordinate descent is deterministic under fixed convergence tolerances, its standard deviation over seeds is exactly $0.0000$.
+\end{enumerate}
+
+\subsection{Physicochemical Synergy: Benefit of Adding Descriptors}
+A central hypothesis of Phase 1 was that combining localized topological circular fingerprints with macroscopic 2D physicochemical descriptors would yield complementary predictive signals. Table~\ref{tab:descriptor_benefit} and Figure~\ref{fig:descriptor_benefit} quantify the empirical performance delta ($\Delta$) obtained by appending the 213 preprocessed RDKit descriptors to the 2,048-bit Morgan fingerprint baseline.
+
+\begin{table}[t]
+\caption{Empirical benefit ($\Delta$) of augmenting Morgan fingerprints with 2D RDKit descriptors on the scaffold split.}
+\label{tab:descriptor_benefit}
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Model Architecture & $\Delta$ ROC AUC & Std & $\Delta$ PR AUC & Std \\
+\midrule
+Logistic Regression & +0.0162 & 0.0000 & +0.0006 & 0.0000 \\
+Random Forest & +0.0474 & 0.0074 & +0.0333 & 0.0031 \\
+XGBoost & \textbf{+0.0586} & 0.0059 & \textbf{+0.0829} & 0.0025 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\columnwidth]{descriptor_benefit.png}
+\caption{Performance gain ($\Delta$ ROC AUC and $\Delta$ PR AUC) resulting from augmenting Morgan fingerprints with 2D RDKit descriptors (scaffold split, mean $\pm$ sd over 3 seeds).}
+\label{fig:descriptor_benefit}
+\end{figure}
+
+The empirical evidence strongly confirms the utility of hybrid representations, while revealing a stark divergence between linear and non-linear estimators:
+\begin{itemize}
+    \item \textbf{Dramatic Boost in Tree Ensembles:} XGBoost derives massive gains from descriptor inclusion, increasing ROC AUC by $+0.0586 \pm 0.0059$ and PR AUC by $+0.0829 \pm 0.0025$. Similarly, Random Forest improves by $+0.0474$ ROC AUC and $+0.0333$ PR AUC. 
+    \item \textbf{Mechanistic Rationale:} Tree-based algorithms naturally construct orthogonal decision boundaries over continuous physical dimensions (e.g., partitioning compounds into lipophilic vs.\ hydrophilic regimes via $\log P$) and can conditionally query whether specific Morgan substructures are present within those regimes. In contrast, linear models assign static weights to individual features without interaction terms; consequently, Logistic Regression experiences only a modest $+0.0162$ gain in ROC AUC and virtually zero gain in PR AUC ($+0.0006$).
+\end{itemize}
+
+\subsection{Generalization Gap: The Scaffold Split Penalty}
+To evaluate the extent to which random splitting overestimates predictive generalization, we benchmarked the identical tuned configurations against the random split partition ($n=771$ test compounds). Table~\ref{tab:scaffold_penalty} and Figure~\ref{fig:scaffold_vs_random} contrast performance across both partitioning strategies.
+
+\begin{table}[t]
+\caption{Scaffold generalization penalty: Performance drop observed when transitioning from Random Split to Bemis--Murcko Scaffold Split (\texttt{morgan+desc}).}
+\label{tab:scaffold_penalty}
+\centering\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Model & Scaf.\ ROC & Rand.\ ROC & $\Delta$ ROC & Scaf.\ PR & Rand.\ PR & $\Delta$ PR \\
+\midrule
+LogReg & 0.7317 & 0.8405 & -0.1088 & 0.3122 & 0.4818 & -0.1695 \\
+Random Forest & 0.7762 & 0.8607 & \textbf{-0.0845} & 0.4035 & 0.5456 & \textbf{-0.1421} \\
+XGBoost & 0.7606 & 0.8621 & -0.1015 & 0.4010 & 0.5647 & -0.1637 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\columnwidth]{scaffold_vs_random_split.png}
+\caption{Scaffold vs.\ Random split comparison across models on hybrid features (\texttt{morgan+desc}, mean $\pm$ sd over 3 seeds).}
+\label{fig:scaffold_vs_random}
+\end{figure}
+
+The data reveals a severe and statistically significant ``scaffold penalty'' across all architectures:
+\begin{itemize}
+    \item On random splits, all models appear to perform exceptionally well, achieving mean ROC AUCs exceeding $0.84$--$0.86$ and PR AUCs exceeding $0.48$--$0.56$.
+    \item When subjected to scaffold splitting, performance declines precipitously: ROC AUC drops by $8.5$ to $10.9$ percentage points, while PR AUC drops by $14.2$ to $17.0$ percentage points.
+    \item Random Forest exhibits the highest structural resilience (lowest generalization drop of $-0.0845$ in ROC and $-0.1421$ in PR).
+    \item This empirical drop directly mirrors the chemical novelty analysis established in Section~\ref{sec:dataset_eda}: when models cannot exploit memorized structural analogs sharing identical scaffold cores, their predictive power relies solely on generalizable physicochemical and topological motifs.
+\end{itemize}
+
+\subsection{Per-Endpoint Performance and Biological Heterogeneity}
+Toxicological predictability varies substantially across the 12 biological endpoints. Table~\ref{tab:endpoint_results_scaffold} and Figure~\ref{fig:endpoint_bars} detail individual test results on the scaffold split using hybrid features.
+
+\begin{table*}[t]
+\caption{Per-endpoint test performance on the scaffold split using hybrid representations (\texttt{morgan+desc}, mean $\pm$ sd over seeds 0, 1, 2).}
+\label{tab:endpoint_results_scaffold}
+\centering\small
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Endpoint Assay & Description & LR ROC AUC & RF ROC AUC & XGB ROC AUC & Top PR AUC (Model) \\
+\midrule
+NR-AR & Androgen receptor (full) & $0.6910 \pm 0.000$ & $0.7640 \pm 0.013$ & $0.7230 \pm 0.009$ & $0.4640 \pm 0.009$ (XGB) \\
+NR-AR-LBD & Androgen receptor (LBD) & $0.7750 \pm 0.000$ & $0.8380 \pm 0.016$ & $\mathbf{0.8570 \pm 0.002}$ & $0.4460 \pm 0.003$ (RF) \\
+NR-AhR & Aryl hydrocarbon receptor & $0.8060 \pm 0.000$ & $\mathbf{0.8410 \pm 0.003}$ & $0.8330 \pm 0.002$ & $\mathbf{0.5960 \pm 0.002}$ (RF) \\
+NR-Aromatase & Cytochrome P450 19A1 & $0.6950 \pm 0.000$ & $0.7510 \pm 0.009$ & $0.7280 \pm 0.014$ & $0.3670 \pm 0.005$ (RF) \\
+NR-ER & Estrogen receptor alpha & $0.6310 \pm 0.000$ & $0.6850 \pm 0.004$ & $0.6740 \pm 0.011$ & $0.4070 \pm 0.005$ (RF) \\
+NR-ER-LBD & Estrogen receptor (LBD) & $0.7050 \pm 0.000$ & $0.7420 \pm 0.010$ & $0.6640 \pm 0.024$ & $0.3100 \pm 0.006$ (RF) \\
+NR-PPAR-gamma & Peroxisome proliferator & $0.7080 \pm 0.000$ & $0.7530 \pm 0.021$ & $0.7390 \pm 0.010$ & $0.3390 \pm 0.012$ (RF) \\
+SR-ARE & Antioxidant response & $0.7020 \pm 0.000$ & $0.7640 \pm 0.002$ & $0.7420 \pm 0.004$ & $0.5260 \pm 0.013$ (RF) \\
+SR-ATAD5 & Genotoxicity biomarker & $0.7760 \pm 0.000$ & $0.7770 \pm 0.017$ & $0.7570 \pm 0.010$ & $0.2470 \pm 0.004$ (XGB) \\
+SR-HSE & Heat shock response & $0.7260 \pm 0.000$ & $0.7390 \pm 0.003$ & $0.7270 \pm 0.012$ & $0.2670 \pm 0.007$ (RF) \\
+SR-MMP & Mitochondrial disruption & $0.8360 \pm 0.000$ & $0.8630 \pm 0.002$ & $\mathbf{0.8790 \pm 0.004}$ & $\mathbf{0.6400 \pm 0.004}$ (XGB) \\
+SR-p53 & p53 tumor suppressor & $0.7300 \pm 0.000$ & $0.7960 \pm 0.009$ & $0.8060 \pm 0.007$ & $0.3610 \pm 0.001$ (XGB) \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{endpoint_bars_scaffold_morgan_desc.png}
+\caption{Per-endpoint test performance (ROC AUC top, PR AUC bottom) on the scaffold split using hybrid features (\texttt{morgan+desc}, mean $\pm$ sd over 3 seeds).}
+\label{fig:endpoint_bars}
+\end{figure*}
+
+\subsubsection{High-Predictability Endpoints}
+The bioassays exhibiting the strongest predictability are SR-MMP, NR-AhR, and NR-AR-LBD:
+\begin{itemize}
+    \item \textbf{SR-MMP (Mitochondrial Membrane Disruption):} Achieves top performance across the entire benchmark (XGBoost ROC AUC $0.8790 \pm 0.004$, PR AUC $0.6400 \pm 0.004$). Mechanistically, uncoupling of the mitochondrial proton gradient is primarily governed by lipophilicity, delocalized positive charge, and membrane-permeable amphipathic structures. These properties are directly captured by calculated $\log P$, polar surface area, and aromatic ring counts.
+    \item \textbf{NR-AhR (Aryl Hydrocarbon Receptor):} Random Forest achieves ROC AUC $0.8410 \pm 0.003$ and PR AUC $0.5960 \pm 0.002$. AhR binds planar, hydrophobic polycyclic aromatic hydrocarbons (PAHs) via a rigid, hydrophobic binding cavity, which map effectively to circular fingerprint motifs and molecular complexity metrics.
+    \item \textbf{NR-AR-LBD:} XGBoost achieves ROC AUC $0.8570 \pm 0.002$, demonstrating that focused binding domain assays offer cleaner SAR signals than full-length nuclear receptor assays subject to co-factor modulation.
+\end{itemize}
+
+\subsubsection{Challenging Endpoints}
+Conversely, endpoints such as NR-ER, SR-HSE, and SR-ATAD5 proved substantially more challenging:
+\begin{itemize}
+    \item \textbf{NR-ER (Estrogen Receptor):} Yields the lowest ROC AUC ($0.6850 \pm 0.004$ with RF), indicating complex conformational dynamics and promiscuous binding that 2D tabular features struggle to separate.
+    \item \textbf{SR-HSE \& SR-ATAD5:} While exhibiting acceptable ROC AUCs ($\approx 0.74$--$0.78$), their PR AUCs remain low ($0.267$ and $0.247$, respectively). In both cases, active compounds represent less than $4\%$ of the library, and cellular heat-shock or DNA-repair cascades can be triggered by diverse, structurally heterogeneous toxicophores.
+\end{itemize}
+These difficult pathways underscore the intrinsic ceiling of 2D tabular representations and provide clear motivation for Phase 2, where deep graph architectures will learn multi-scale spatial and relational graph representations directly from molecular topology.

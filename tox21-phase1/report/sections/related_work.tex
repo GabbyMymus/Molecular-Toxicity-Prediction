@@ -1,2 +1,37 @@
 \section{Related Work}
-Classical fingerprints and molecular descriptors provide strong, interpretable baselines.
+\label{sec:related_work}
+
+Molecular toxicity prediction leverages computational chemical representations and statistical learning to identify molecules that trigger adverse biological pathways. Our study builds on prior research in toxicity benchmarking, molecular fingerprint design, chemical descriptors, out-of-domain generalization, and class-imbalanced learning. These foundations motivate the comparison of classical tabular models in Phase 1 and graph-based learning approaches in Phase 2.
+
+\subsection{Toxicity Benchmarks and the Tox21 Data Challenge}
+
+The Tox21 Data Challenge was initiated to assess the predictive capacity of computational methods across 12 toxicologically relevant bioassays~\cite{tox21}. Early benchmark pipelines, notably DeepTox~\cite{mayr2016deeptox}, achieved competitive results by integrating large collections of chemical features with deep feedforward networks, demonstrating that multi-task learning and feature fusion can capture biological assay cross-talk. 
+
+Subsequently, MoleculeNet formalized Tox21 as a standard molecular machine learning benchmark~\cite{wu2018moleculenet}. MoleculeNet highlighted the criticality of dataset partitioning and task-appropriate evaluation metrics, emphasizing that benchmark comparisons are susceptible to misleading interpretations if label missingness and class imbalances are mishandled. Tox21 molecules are tested unevenly across assays, producing sparse target matrices where missing entries must not be conflated with negative activity.
+
+\subsection{Molecular Representations: Fingerprints versus Descriptors}
+
+Molecular representations in tabular machine learning typically follow two paradigms:
+\begin{enumerate}
+    \item \textbf{Circular Topological Fingerprints:} Extended-Connectivity Fingerprints (ECFP), introduced by Rogers and Hahn~\cite{rogers2010extended}, encode local atomic neighborhoods via circular hashing. Morgan fingerprints iteratively record bond pathways up to a specified radius $r$. With radius $r=2$ and $B=2{,}048$ hashed bits (ECFP4 equivalent), Morgan fingerprints capture discrete 2D substructural fragments, functional groups, and branching patterns.
+    \item \textbf{2D Physicochemical Descriptors:} While circular fingerprints capture discrete structural motifs, biological activity and toxicokinetics are heavily mediated by bulk physicochemical properties such as hydrophobicity ($\log P$), molecular volume, hydrogen-bonding capacity, and polar surface area. Calculated 2D descriptors, implemented via software suites like RDKit~\cite{landrum2013rdkit}, summarize continuous whole-molecule parameters.
+\end{enumerate}
+Prior studies frequently evaluate either fingerprints or descriptors in isolation. In Phase 1, we empirically examine the predictive synergy of concatenating both modalities into a unified feature vector, evaluating whether tree-based ensembles can exploit interactions between continuous physicochemical bounds and discrete substructural flags.
+
+\subsection{Generalization and Scaffold Splits}
+
+In drug discovery and chemical safety, machine learning models are deployed to screen newly synthesized chemical series that often diverge from the training distribution. Random train/test splits inadvertently place structural analogs with identical core scaffolds into both partitions, leading to high training-test Tanimoto similarities and artificially optimistic performance estimates.
+
+Bemis and Murcko formalized the concept of molecular frameworks by decomposing structures into ring systems and linkers~\cite{bemis1996properties}. Scaffold-based partitioning groups compounds sharing the same Bemis--Murcko core and assigns entire scaffold clusters exclusively to the training, validation, or test partitions~\cite{wu2018moleculenet}. This protocol rigorously evaluates out-of-distribution chemotype generalization. Our work measures the quantitative ``scaffold penalty'' across multiple model architectures to assess susceptibility to chemotype distribution shifts.
+
+\subsection{Evaluation Under Extreme Class Imbalance}
+
+In high-throughput bioassay screening, active toxic compounds typically represent a small minority of the tested library. Under severe class imbalance, standard classification accuracy is uninformative, as a trivial majority-class classifier achieves high accuracy while failing to identify toxic compounds.
+
+We evaluate models using Receiver Operating Characteristic Area Under the Curve (ROC AUC) and Precision--Recall Area Under the Curve (PR AUC). Saito and Rehmsmeier demonstrated that PR AUC is substantially more sensitive than ROC AUC when evaluating binary classifiers on imbalanced datasets~\cite{saito2015precision}. While a random guessing baseline produces an expected ROC AUC of $0.5$, the baseline PR AUC of a random classifier equals the positive class prevalence ($P/(P+N)$), which in Tox21 is as low as $0.034$. In our evaluation, both metrics are computed with strict masking over observed labels, and imbalance-aware loss weighting is employed during training.
+
+\subsection{Learned Graph Representations and Phase 2 Motivation}
+
+Classical molecular machine learning relies on fixed, predefined feature engineering. More recently, geometric deep learning has emerged as an expressive paradigm by representing molecules as graphs where atoms correspond to nodes and chemical bonds correspond to edges.
+
+Gilmer et al.\ unified graph-based molecular architectures under the Message Passing Neural Network (MPNN) framework~\cite{gilmer2017neural}, wherein node and edge features are iteratively updated through local neighborhood aggregation. While MPNNs and Graph Convolutional Networks (GCNs) demonstrate notable performance on quantum chemical datasets (e.g., QM9), their superiority over well-tuned classical baselines on tabular benchmarks with small, imbalanced bioactivity datasets remains contested. Phase 1 provides the rigorous, leak-free classical baseline necessary to evaluate Phase 2 graph architectures under identical data splits and evaluation protocols.

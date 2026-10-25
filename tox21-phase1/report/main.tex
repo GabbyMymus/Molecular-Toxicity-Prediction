@@ -1,8 +1,35 @@
 \documentclass[conference]{IEEEtran}
-\title{Tox21 Phase 1: Reproducible Molecular Toxicity Prediction}
-\author{}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\graphicspath{{../figures/}{figures/}}
+\usepackage{booktabs}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{microtype}
+
+\title{Tox21 Phase 1: Reproducible Molecular Toxicity Prediction with Fingerprints, Descriptors, and Classical Ensembles}
+
+\author{
+    \IEEEauthorblockN{Abhijeet Kumar, Raghav, Ranajeet, Parrv}
+    \IEEEauthorblockA{\textit{Department of Computer Science and Engineering} \\
+    \textit{Molecular Toxicity Prediction Consortium} \\
+    Tox21 Phase 1 Benchmark Project}
+}
+
 \begin{document}
+
 \maketitle
+
+\begin{abstract}
+Predicting chemical toxicity in silico is vital for environmental safety, drug discovery, and reducing animal experimentation. The Tox21 benchmark challenges computational models to predict compound activity across 12 toxicological bioassays encompassing nuclear receptor and stress response pathways. Tox21 exhibits pronounced real-world data pathologies: multi-task label sparsity, extreme class imbalance, and substantial out-of-distribution chemotype shifts. In this Phase 1 investigation, we build a disciplined, fully reproducible classical tabular baseline. We evaluate three distinct classifier architectures---Logistic Regression (liblinear), Random Forest, and XGBoost---evaluated on two molecular representations: 2,048-bit Circular Morgan fingerprints (ECFP4 equivalent) and a 2,261-dimensional hybrid modality combining Morgan fingerprints with 213 preprocessed, leak-free 2D RDKit physicochemical descriptors. Preprocessing transformations (imputation, clipping, and standard scaling) are strictly isolated to training partitions. All models are governed by a pre-registered, frozen hyperparameter search budget of eight configurations per model, tuned exclusively on the scaffold validation split. Across 432 final test evaluations spanning three random seeds, two partitioning regimes (Bemis--Murcko scaffold split vs.\ random split), and 12 endpoints, Random Forest trained on hybrid features achieves the superior scaffold test performance (mean ROC AUC $0.7762 \pm 0.0020$, PR AUC $0.4035 \pm 0.0042$). XGBoost benefits most from the integration of physicochemical descriptors ($\Delta\text{ROC} = +0.0586$, $\Delta\text{PR} = +0.0829$). We quantify a dramatic scaffold generalization penalty across all architectures ($\approx 0.085$--$0.109$ ROC AUC drop and $0.142$--$0.170$ PR AUC drop), empirically validating that classical models suffer from significant chemotype distribution shifts. This rigorous benchmark establishes an authoritative foundation for Phase 2 graph neural network architectures.
+\end{abstract}
+
+\begin{IEEEkeywords}
+In silico toxicology, Tox21 benchmark, molecular fingerprints, RDKit descriptors, scaffold split, class imbalance, Random Forest, XGBoost, reproducibility.
+\end{IEEEkeywords}
+
 \input{sections/intro}
 \input{sections/related_work}
 \input{sections/dataset_eda}
@@ -10,6 +37,8 @@
 \input{sections/models_setup}
 \input{sections/results}
 \input{sections/conclusion}
+
 \bibliographystyle{IEEEtran}
 \bibliography{references}
+
 \end{document}

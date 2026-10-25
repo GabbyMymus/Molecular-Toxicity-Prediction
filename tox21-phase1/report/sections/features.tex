@@ -5,6 +5,7 @@ Predicting toxicological outcomes across heterogeneous biochemical endpoints req
 
 \subsection{Circular Morgan Fingerprints}
 \label{subsec:morgan}
+Morgan fingerprints~\cite{tox21,rogers2010extended}, conceptually equivalent to Extended-Connectivity Fingerprints (ECFP), represent localized chemical environments through iterative radial topological hashing. Beginning with atomic invariants (element type, formal charge, hybridization, degree, and aromaticity at radius $r = 0$), the algorithm iteratively aggregates neighboring connectivity information up to radius $r = 2$ (representing topological diameters up to 4 bonds, ECFP4).
 Morgan fingerprints~\cite{morgan1965generation}, conceptually equivalent to Extended-Connectivity Fingerprints (ECFP)~\cite{rogers2010extended}, represent localized chemical environments through iterative radial topological hashing. Beginning with atomic invariants (element type, formal charge, hybridization, degree, and aromaticity at radius $r = 0$), the algorithm iteratively aggregates neighboring connectivity information up to radius $r = 2$ (representing topological diameters up to 4 bonds, ECFP4).
 
 To ensure deterministic encoding across the 7,709 unique molecules, fingerprints were generated using RDKit's modern \texttt{rdFingerprintGenerator} API with fixed parameters:
@@ -19,7 +20,7 @@ Empirical evaluation of the 2,048-bit Morgan vectors across the cleaned Tox21 da
 
 \subsection{2D RDKit Molecular Descriptors}
 \label{subsec:descriptors}
-While circular fingerprints encode discrete local substructural motifs, toxicokinetics (absorption, biological membrane permeability, and non-specific cellular partitioning) are fundamentally driven by macroscopic physicochemical properties. We computed the complete suite of 217 2D molecular descriptors provided by RDKit's \texttt{Descriptors.descList}, capturing:
+While circular fingerprints encode discrete local substructural motifs, toxicokinetics (absorption, biological membrane permeability, and non-specific cellular partitioning) are fundamentally driven by macroscopic physicochemical properties. We computed the complete suite of 217 2D molecular descriptors provided by RDKit's \texttt{Descriptors.descList}~\cite{landrum2013rdkit}, capturing:
 \begin{itemize}
     \item Bulk molecular properties: Molecular weight (\texttt{MolWt}), topological polar surface area (\texttt{TPSA}), molar refractivity (\texttt{MolMR}), and lipophilicity ($\text{SlogP}$ / \texttt{MolLogP}).
     \item Electronic and charge distribution: Partial charge extrema (\texttt{MaxPartialCharge}, \texttt{MinPartialCharge}) and electrotopological state (E-State) indices.
@@ -59,12 +60,13 @@ On the primary scaffold training split, four features were dropped due to near-c
 
 \subsection{Multi-Task Random Forest Architecture}
 \label{subsec:rf}
-The Random Forest baseline was implemented via \texttt{MultiTaskRandomForest} to address two domain-specific constraints of Tox21:
+The Random Forest baseline~\cite{breiman2001random} was implemented via a multi-task wrapper to address two domain-specific constraints of Tox21:
 \begin{enumerate}
+    \item \textbf{Extreme Class Imbalance:} Active toxic compounds represent a small fraction of tested molecules (e.g., $3.4\%$ positive for NR-AR, $4.3\%$ for NR-AR-LBD). To counteract positive under-representation without distorting empirical distributions, we parameterized tree construction with \texttt{class\_weight="balanced\_subsample"}, which reweights class frequencies dynamically within each bootstrap sample.
     \item \textbf{Extreme Class Imbalance:} Active toxic compounds represent a small fraction of tested molecules (e.g., $4.3\%$ positive for NR-AR, $3.5\%$ for NR-AR-LBD). To counteract positive under-representation without distorting empirical distributions, we parameterized tree construction with \texttt{class\_weight="balanced\_subsample"}, which reweights class frequencies dynamically within each bootstrap sample.
     \item \textbf{Sparse Target Label Matrices:} Unmeasured biological endpoints are represented as NaN in the label matrix. Our model trains independent binary \texttt{RandomForestClassifier} estimators per task, explicitly filtering out missing labels and training solely on observed samples.
 \end{enumerate}
-The hyperparameter search space was frozen to the agreed 8-configuration budget varying tree depth ($None, 30$), leaf size ($1, 3, 5$), and ensemble size ($300, 500$), using validation PR-AUC for configuration selection.
+The hyperparameter search space was frozen to the agreed 8-configuration budget varying tree depth ($\text{None}, 30$), leaf size ($1, 3, 5$), and ensemble size ($300, 500$), using validation PR AUC for configuration selection.
 
 \subsection{Reproducibility, Alignment, and Manifest Safeguards}
 \label{subsec:safeguards}

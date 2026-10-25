@@ -1,3 +1,91 @@
+\section{Dataset and Exploratory Data Analysis}
+\label{sec:dataset_eda}
+
+\subsection{Data Origin and Sanitization Pipeline}
+The Tox21 chemical library comprises environmental chemicals, industrial additives, and approved therapeutics curated by the Tox21 consortium and distributed via the MoleculeNet repository~\cite{wu2018moleculenet}. The raw dataset consists of SMILES representations alongside binary activity calls across 12 bioassays.
+
+To guarantee rigorous benchmarking and structural consistency, we implemented a deterministic data cleaning pipeline conforming to the Phase 1 project contract:
+\begin{enumerate}
+    \item \textbf{SMILES Parsing and Neutralization:} Each SMILES string was parsed using RDKit's \texttt{MolFromSmiles}. Non-parseable or malformed structures were discarded. For multi-component formulations, organometallic salts, and solvates, the largest covalently bonded organic fragment was extracted.
+    \item \textbf{Canonicalization:} Standard molecular graphs were converted into canonical SMILES strings (\texttt{MolToSmiles}) to ensure invariant representation across stereochemical conventions.
+    \item \textbf{Deduplication and Conflict Resolution:} Identical canonical SMILES were identified and merged. When duplicate entries reported conflicting binary labels for an endpoint (e.g., both active and inactive across independent assay batches), the contract specified that the consensus label be set to \texttt{NaN} (missing) to avoid propagating unverified labels.
+    \item \textbf{Final Curated Cohort:} The sanitized cohort contains exactly $N = 7{,}709$ unique molecules with deterministic integer indices $\texttt{mol\_id} \in [0, 7708]$. The cleaned sequence is permanently preserved in \texttt{data/processed/tox21\_clean.csv}.
+\end{enumerate}
+
+\subsection{The 12 Toxicological Assays}
+The Tox21 panel evaluates 12 adverse biological endpoints split across two major cellular signaling axes:
+\begin{itemize}
+    \item \textbf{Nuclear Receptor (NR) Signaling (7 assays):}
+    \begin{itemize}
+        \item \textbf{NR-AR \& NR-AR-LBD:} Androgen receptor activation measured via full-length and ligand-binding domain constructs, critical for identifying endocrine disruptors impacting reproductive toxicology.
+        \item \textbf{NR-AhR:} Aryl hydrocarbon receptor activation, a xenobiotic sensor mediating dioxin-like toxicity and metabolic enzyme induction.
+        \item \textbf{NR-Aromatase:} Inhibition of cytochrome P450 19A1 (aromatase), preventing androgen-to-estrogen biosynthesis.
+        \item \textbf{NR-ER \& NR-ER-LBD:} Estrogen receptor alpha activation (full-length and ligand-binding domain), central to hormonal signaling disruptions.
+        \item \textbf{NR-PPAR-gamma:} Peroxisome proliferator-activated receptor gamma modulation, implicated in lipid homeostasis and metabolic syndrome.
+    \end{itemize}
+    \item \textbf{Stress Response (SR) Pathways (5 assays):}
+    \begin{itemize}
+        \item \textbf{SR-ARE:} Nrf2/antioxidant response element pathway induction, indicating oxidative stress and reactive oxygen species generation.
+        \item \textbf{SR-ATAD5:} ATPase family AAA domain-containing protein 5 upregulation, a sensitive biomarker for genotoxicity and stalled DNA replication forks.
+        \item \textbf{SR-HSE:} Heat shock factor response element activation, probing proteotoxic stress and unfolded protein responses.
+        \item \textbf{SR-MMP:} Mitochondrial membrane potential disruption, a primary mechanism of chemical-induced cytotoxicity and apoptotic signaling.
+        \item \textbf{SR-p53:} Tumor suppressor p53 pathway activation, signaling critical DNA damage and chromosomal aberrations.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Target Matrix Sparsity and Extreme Class Imbalance}
+The target label matrix $Y \in \{0, 1, \text{NaN}\}^{7709 \times 12}$ exhibits significant sparsity: approximately $19.2\%$ of all compound-endpoint pairs are unmeasured. The number of experimentally measured compounds per assay ranges from 5,820 (for NR-ER-LBD) to 7,265 (for NR-AR). In accordance with the contract, missing entries are masked during both model fitting and performance evaluation; unmeasured targets are never imputed as zero.
+
+\begin{table}[t]
+\caption{Tox21 bioassay endpoints, labeled counts, and positive prevalence in the cleaned dataset ($N=7{,}709$).}
+\label{tab:assay_summary}
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Endpoint & Pathway & Labeled & Actives ($Y=1$) & Pos.\ Rate \\
+\midrule
+NR-AR & Nuclear Receptor & 7,265 & 246 & $3.39\%$ \\
+NR-AR-LBD & Nuclear Receptor & 6,750 & 291 & $4.31\%$ \\
+NR-AhR & Nuclear Receptor & 6,547 & 768 & $11.73\%$ \\
+NR-Aromatase & Nuclear Receptor & 5,821 & 300 & $5.15\%$ \\
+NR-ER & Nuclear Receptor & 6,193 & 783 & $12.64\%$ \\
+NR-ER-LBD & Nuclear Receptor & 5,820 & 348 & $5.98\%$ \\
+NR-PPAR-gamma & Nuclear Receptor & 6,434 & 227 & $3.53\%$ \\
+SR-ARE & Stress Response & 5,832 & 900 & $15.43\%$ \\
+SR-ATAD5 & Stress Response & 7,072 & 264 & $3.73\%$ \\
+SR-HSE & Stress Response & 6,467 & 372 & $5.75\%$ \\
+SR-MMP & Stress Response & 5,810 & 926 & $15.94\%$ \\
+SR-p53 & Stress Response & 6,774 & 423 & $6.24\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+As detailed in Table~\ref{tab:assay_summary}, toxic compounds constitute a severe minority across all assays. For highly imbalanced endpoints such as NR-AR ($3.39\%$), NR-PPAR-gamma ($3.53\%$), and SR-ATAD5 ($3.73\%$), fewer than 4 out of every 100 tested molecules are active. Even for the most active assay (SR-MMP), positive prevalence remains below $16\%$. This pronounced imbalance causes classification accuracy to be completely deceptive and necessitates the use of ROC AUC and PR AUC under explicit class-weighted loss objectives.
+
+\subsection{Partitioning: Scaffold versus Random Splits}
+We evaluate all models under two distinct 80/10/10 partitioning regimes (6,167 train / 771 validation / 771 test):
+\begin{enumerate}
+    \item \textbf{Random Split:} Molecules are randomly permuted and partitioned using seed 0. While simple, random splitting allows structural analogs sharing the same central scaffold to populate both training and test sets.
+    \item \textbf{Bemis--Murcko Scaffold Split:} Molecules are clustered according to their two-dimensional core framework (rings and connecting linkers, stripping side chains). Scaffolds are sorted by cluster size and allocated sequentially into test, validation, and training sets to approximate the 80/10/10 target proportions~\cite{bemis1996properties}.
+\end{enumerate}
+
+\subsubsection{Acyclic Molecule Partitioning}
+A critical structural property uncovered during exploratory data analysis is that all 1,753 acyclic (ringless) compounds in Tox21 share an identical empty scaffold (represented as an empty string \texttt{""}). In the deterministic scaffold split algorithm, this single large cluster is assigned wholly to the training partition ($n=6{,}167$). Consequently, the scaffold validation ($n=771$) and test ($n=771$) partitions consist entirely of ring-containing structures.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\columnwidth]{tanimoto_similarity_distributions.png}
+\caption{Chemical novelty distribution: Maximum Tanimoto similarity between test set molecules and training set molecules for Random vs.\ Scaffold splits (2,048-bit Morgan fingerprints).}
+\label{fig:tanimoto}
+\end{figure}
+
+\subsubsection{Quantifying Chemical Novelty}
+To quantify the domain shift induced by scaffold partitioning, we computed the maximum Tanimoto coefficient of each test compound to all training set compounds:
+\begin{equation}
+    T(u, v) = \frac{|u \cap v|}{|u \cup v|} = \frac{\sum_i u_i v_i}{\sum_i u_i + \sum_i v_i - \sum_i u_i v_i}
+\end{equation}
+As illustrated in Figure~\ref{fig:tanimoto}, test molecules in the random split exhibit high similarity to the training set (mean maximum Tanimoto similarity $= 0.584$), with numerous test compounds possessing identical or near-identical structural analogs ($T \ge 0.85$) in the training set. Conversely, test molecules in the scaffold split exhibit markedly reduced similarity to the training set (mean maximum Tanimoto similarity $= 0.412$), with virtually no high-similarity analogs. This confirms that the scaffold split presents a true out-of-domain extrapolation test.
 \section{Dataset and Exploratory Analysis}
 \label{sec:dataset}
 

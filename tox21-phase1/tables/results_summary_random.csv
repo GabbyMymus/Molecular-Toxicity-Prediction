@@ -1,0 +1,7 @@
+model,feature_set,ROC_AUC_mean,ROC_AUC_std,PR_AUC_mean,PR_AUC_std
+Logistic Regression,Morgan Only,0.8212,0.0,0.4821,0.0
+Logistic Regression,Morgan + Desc,0.8405,0.0,0.4818,0.0
+Random Forest,Morgan Only,0.8364,0.0039,0.5038,0.0006
+Random Forest,Morgan + Desc,0.8607,0.0045,0.5456,0.0038
+XGBoost,Morgan Only,0.8072,0.0013,0.5046,0.0017
+XGBoost,Morgan + Desc,0.8621,0.0019,0.5647,0.0021
