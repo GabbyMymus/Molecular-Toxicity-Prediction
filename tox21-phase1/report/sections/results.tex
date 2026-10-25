@@ -27,8 +27,8 @@ XGBoost & Morgan + Desc & 0.7606 & 0.0036 & 0.4010 & 0.0045 \\
 
 Several core findings emerge from this comparison:
 \begin{enumerate}
-    \item \textbf{Random Forest Superiority:} Multi-task Random Forest trained on hybrid features (\texttt{morgan+desc}) achieves the highest overall predictive performance across both evaluation metrics, recording an average ROC AUC of $0.7762 \pm 0.0020$ and PR AUC of $0.4035 \pm 0.0042$.
-    \item \textbf{Gradient Boosting Competitiveness:} XGBoost trained on hybrid features achieves near-identical PR AUC ($0.4010 \pm 0.0045$) and strong ROC AUC ($0.7606 \pm 0.0036$), demonstrating that tree ensembles are uniformly well-suited for tabular multi-task toxicity prediction.
+    \item \textbf{Highest Mean (Random Forest):} A Random Forest (one forest per endpoint) trained on hybrid features (\texttt{morgan+desc}) has the highest mean on both metrics in our runs, recording an average ROC AUC of $0.7762 \pm 0.0020$ and PR AUC of $0.4035 \pm 0.0042$. Its PR AUC lead over XGBoost (about $0.003$) is smaller than the seed standard deviation.
+    \item \textbf{Gradient Boosting Competitiveness:} XGBoost trained on hybrid features achieves near-identical PR AUC ($0.4010 \pm 0.0045$) and strong ROC AUC ($0.7606 \pm 0.0036$), On Morgan-only features, however, XGBoost (ROC AUC $0.7020$) scores below Logistic Regression ($0.7156$), so the advantage of tree ensembles depends on the feature set.
     \item \textbf{Linear Baseline Competitiveness:} L2-regularized Logistic Regression achieves an average ROC AUC of $0.7317$ on hybrid features, providing a competitive, low-variance linear benchmark. Because liblinear's coordinate descent is deterministic under fixed convergence tolerances, its standard deviation over seeds is exactly $0.0000$.
 \end{enumerate}
 
@@ -58,10 +58,10 @@ XGBoost & \textbf{+0.0586} & 0.0059 & \textbf{+0.0829} & 0.0025 \\
 \label{fig:descriptor_benefit}
 \end{figure}
 
-The empirical evidence strongly confirms the utility of hybrid representations, while revealing a stark divergence between linear and non-linear estimators:
+Adding descriptors helps the tree models more than Logistic Regression:
 \begin{itemize}
-    \item \textbf{Dramatic Boost in Tree Ensembles:} XGBoost derives massive gains from descriptor inclusion, increasing ROC AUC by $+0.0586 \pm 0.0059$ and PR AUC by $+0.0829 \pm 0.0025$. Similarly, Random Forest improves by $+0.0474$ ROC AUC and $+0.0333$ PR AUC. 
-    \item \textbf{Mechanistic Rationale:} Tree-based algorithms naturally construct orthogonal decision boundaries over continuous physical dimensions (e.g., partitioning compounds into lipophilic vs.\ hydrophilic regimes via $\log P$) and can conditionally query whether specific Morgan substructures are present within those regimes. In contrast, linear models assign static weights to individual features without interaction terms; consequently, Logistic Regression experiences only a modest $+0.0162$ gain in ROC AUC and virtually zero gain in PR AUC ($+0.0006$).
+    \item \textbf{Larger Gains for Tree Ensembles:} XGBoost has the largest gains from descriptor inclusion, increasing ROC AUC by $+0.0586 \pm 0.0059$ and PR AUC by $+0.0829 \pm 0.0025$. Similarly, Random Forest improves by $+0.0474$ ROC AUC and $+0.0333$ PR AUC. 
+    \item \textbf{Possible Explanation (not tested):} We did not run an ablation or feature-importance analysis on the hybrid set. One possibility is that tree-based algorithms can construct orthogonal decision boundaries over continuous physical dimensions (e.g., partitioning compounds into lipophilic vs.\ hydrophilic regimes via $\log P$) and can conditionally query whether specific Morgan substructures are present within those regimes. Logistic Regression gains only $+0.0162$ in ROC AUC and $+0.0006$ in PR AUC.
 \end{itemize}
 
 \subsection{Chemical Novelty of the Test Sets}
@@ -105,19 +105,19 @@ XGBoost & 0.7606 & 0.8621 & -0.1015 & 0.4010 & 0.5647 & -0.1637 \\
 \label{fig:scaffold_vs_random}
 \end{figure}
 
-The data reveals a severe and statistically significant ``scaffold penalty'' across all architectures:
+All three architectures score lower on the scaffold split than on the random split (no significance test was run, and the two test sets contain different molecules):
 \begin{itemize}
-    \item On random splits, all models appear to perform exceptionally well, achieving mean ROC AUCs exceeding $0.84$--$0.86$ and PR AUCs exceeding $0.48$--$0.56$.
-    \item When subjected to scaffold splitting, performance declines precipitously: ROC AUC drops by $8.5$ to $10.9$ percentage points, while PR AUC drops by $14.2$ to $17.0$ percentage points.
-    \item Random Forest exhibits the highest structural resilience (lowest generalization drop of $-0.0845$ in ROC and $-0.1421$ in PR).
-    \item This empirical drop directly mirrors the chemical novelty analysis reported in Section~\ref{subsec:novelty}: when models cannot exploit memorized structural analogs sharing identical scaffold cores, their predictive power relies solely on generalizable physicochemical and topological motifs.
+    \item On random splits, mean ROC AUCs are $0.84$--$0.86$ and mean PR AUCs are $0.48$--$0.56$ for the three models.
+    \item When subjected to scaffold splitting, scores are lower: on hybrid features ROC AUC is $8.5$ to $10.9$ percentage points lower and PR AUC is $14.2$ to $17.0$ percentage points lower.
+    \item On hybrid features Random Forest shows the smallest drop ($-0.0845$ in ROC and $-0.1421$ in PR); on Morgan-only features its ROC drop ($0.1076$) is the largest of the three models.
+    \item This is consistent with the chemical novelty analysis in Section~\ref{subsec:novelty}, where scaffold test molecules are less similar to the training set. It is not a controlled test of leakage, because the two test sets contain different molecules and different numbers of positives.
 \end{itemize}
 
 \subsection{Per-Endpoint Performance and Biological Heterogeneity}
 Toxicological predictability varies substantially across the 12 biological endpoints. Table~\ref{tab:endpoint_results_scaffold} and Figure~\ref{fig:endpoint_bars} detail individual test results on the scaffold split using hybrid features.
 
 \begin{table*}[t]
-\caption{Per-endpoint test performance on the scaffold split using hybrid representations (\texttt{morgan+desc}, mean $\pm$ sd over seeds 0, 1, 2).}
+\caption{Per-endpoint test performance on the scaffold split using hybrid representations (\texttt{morgan+desc}, mean $\pm$ sd over seeds 0, 1, 2; best ROC AUC per row in bold).}
 \label{tab:endpoint_results_scaffold}
 \centering\small
 \setlength{\tabcolsep}{8pt}
@@ -125,18 +125,18 @@ Toxicological predictability varies substantially across the 12 biological endpo
 \toprule
 Endpoint Assay & Description & LR ROC AUC & RF ROC AUC & XGB ROC AUC & Top PR AUC (Model) \\
 \midrule
-NR-AR & Androgen receptor (full) & $0.6910 \pm 0.000$ & $0.7640 \pm 0.013$ & $0.7230 \pm 0.009$ & $0.4640 \pm 0.009$ (XGB) \\
-NR-AR-LBD & Androgen receptor (LBD) & $0.7750 \pm 0.000$ & $0.8380 \pm 0.016$ & $\mathbf{0.8570 \pm 0.002}$ & $0.4460 \pm 0.003$ (RF) \\
-NR-AhR & Aryl hydrocarbon receptor & $0.8060 \pm 0.000$ & $\mathbf{0.8410 \pm 0.003}$ & $0.8330 \pm 0.002$ & $\mathbf{0.5960 \pm 0.002}$ (RF) \\
-NR-Aromatase & Cytochrome P450 19A1 & $0.6950 \pm 0.000$ & $0.7510 \pm 0.009$ & $0.7280 \pm 0.014$ & $0.3670 \pm 0.005$ (RF) \\
-NR-ER & Estrogen receptor alpha & $0.6310 \pm 0.000$ & $0.6850 \pm 0.004$ & $0.6740 \pm 0.011$ & $0.4070 \pm 0.005$ (RF) \\
-NR-ER-LBD & Estrogen receptor (LBD) & $0.7050 \pm 0.000$ & $0.7420 \pm 0.010$ & $0.6640 \pm 0.024$ & $0.3100 \pm 0.006$ (RF) \\
-NR-PPAR-gamma & Peroxisome proliferator & $0.7080 \pm 0.000$ & $0.7530 \pm 0.021$ & $0.7390 \pm 0.010$ & $0.3390 \pm 0.012$ (RF) \\
-SR-ARE & Antioxidant response & $0.7020 \pm 0.000$ & $0.7640 \pm 0.002$ & $0.7420 \pm 0.004$ & $0.5260 \pm 0.013$ (RF) \\
-SR-ATAD5 & Genotoxicity biomarker & $0.7760 \pm 0.000$ & $0.7770 \pm 0.017$ & $0.7570 \pm 0.010$ & $0.2470 \pm 0.004$ (XGB) \\
-SR-HSE & Heat shock response & $0.7260 \pm 0.000$ & $0.7390 \pm 0.003$ & $0.7270 \pm 0.012$ & $0.2670 \pm 0.007$ (RF) \\
-SR-MMP & Mitochondrial disruption & $0.8360 \pm 0.000$ & $0.8630 \pm 0.002$ & $\mathbf{0.8790 \pm 0.004}$ & $\mathbf{0.6400 \pm 0.004}$ (XGB) \\
-SR-p53 & p53 tumor suppressor & $0.7300 \pm 0.000$ & $0.7960 \pm 0.009$ & $0.8060 \pm 0.007$ & $0.3610 \pm 0.001$ (XGB) \\
+NR-AR & Androgen receptor (full) & $0.691 \pm 0.000$ & $\mathbf{0.764 \pm 0.013}$ & $0.723 \pm 0.009$ & $0.464 \pm 0.009$ (XGB) \\
+NR-AR-LBD & Androgen receptor (LBD) & $0.775 \pm 0.000$ & $0.838 \pm 0.016$ & $\mathbf{0.857 \pm 0.002}$ & $0.446 \pm 0.003$ (RF) \\
+NR-AhR & Aryl hydrocarbon receptor & $0.806 \pm 0.000$ & $\mathbf{0.841 \pm 0.003}$ & $0.833 \pm 0.002$ & $0.596 \pm 0.002$ (RF) \\
+NR-Aromatase & Cytochrome P450 19A1 & $0.695 \pm 0.000$ & $\mathbf{0.751 \pm 0.009}$ & $0.728 \pm 0.014$ & $0.367 \pm 0.005$ (RF) \\
+NR-ER & Estrogen receptor alpha & $0.631 \pm 0.000$ & $\mathbf{0.685 \pm 0.004}$ & $0.674 \pm 0.011$ & $0.407 \pm 0.005$ (RF) \\
+NR-ER-LBD & Estrogen receptor (LBD) & $0.705 \pm 0.000$ & $\mathbf{0.742 \pm 0.010}$ & $0.664 \pm 0.024$ & $0.310 \pm 0.006$ (RF) \\
+NR-PPAR-gamma & Peroxisome proliferator & $0.708 \pm 0.000$ & $\mathbf{0.753 \pm 0.021}$ & $0.739 \pm 0.010$ & $0.339 \pm 0.012$ (RF) \\
+SR-ARE & Antioxidant response & $0.702 \pm 0.000$ & $\mathbf{0.764 \pm 0.002}$ & $0.742 \pm 0.004$ & $0.526 \pm 0.013$ (RF) \\
+SR-ATAD5 & Genotoxicity biomarker & $0.776 \pm 0.000$ & $\mathbf{0.777 \pm 0.017}$ & $0.757 \pm 0.010$ & $0.247 \pm 0.004$ (XGB) \\
+SR-HSE & Heat shock response & $0.726 \pm 0.000$ & $\mathbf{0.739 \pm 0.003}$ & $0.727 \pm 0.012$ & $0.267 \pm 0.007$ (RF) \\
+SR-MMP & Mitochondrial disruption & $0.836 \pm 0.000$ & $0.863 \pm 0.002$ & $\mathbf{0.879 \pm 0.004}$ & $0.640 \pm 0.004$ (XGB) \\
+SR-p53 & p53 tumor suppressor & $0.730 \pm 0.000$ & $0.796 \pm 0.009$ & $\mathbf{0.806 \pm 0.007}$ & $0.361 \pm 0.001$ (XGB) \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -151,15 +151,15 @@ SR-p53 & p53 tumor suppressor & $0.7300 \pm 0.000$ & $0.7960 \pm 0.009$ & $0.806
 \subsubsection{High-Predictability Endpoints}
 The bioassays exhibiting the strongest predictability are SR-MMP, NR-AhR, and NR-AR-LBD:
 \begin{itemize}
-    \item \textbf{SR-MMP (Mitochondrial Membrane Disruption):} Achieves top performance across the entire benchmark (XGBoost ROC AUC $0.8790 \pm 0.004$, PR AUC $0.6400 \pm 0.004$). Mechanistically, uncoupling of the mitochondrial proton gradient is primarily governed by lipophilicity, delocalized positive charge, and membrane-permeable amphipathic structures. These properties are directly captured by calculated $\log P$, polar surface area, and aromatic ring counts.
-    \item \textbf{NR-AhR (Aryl Hydrocarbon Receptor):} Random Forest achieves ROC AUC $0.8410 \pm 0.003$ and PR AUC $0.5960 \pm 0.002$. AhR binds planar, hydrophobic polycyclic aromatic hydrocarbons (PAHs) via a rigid, hydrophobic binding cavity, which map effectively to circular fingerprint motifs and molecular complexity metrics.
-    \item \textbf{NR-AR-LBD:} XGBoost achieves ROC AUC $0.8570 \pm 0.002$, demonstrating that focused binding domain assays offer cleaner SAR signals than full-length nuclear receptor assays subject to co-factor modulation.
+    \item \textbf{SR-MMP (Mitochondrial Membrane Disruption):} Achieves top performance across the entire benchmark (XGBoost ROC AUC $0.8790 \pm 0.004$, PR AUC $0.6400 \pm 0.004$). We did not test why this endpoint is easier; one possibility is that lipophilicity-related descriptors such as $\log P$ and polar surface area carry signal for it.
+    \item \textbf{NR-AhR (Aryl Hydrocarbon Receptor):} Random Forest achieves ROC AUC $0.8410 \pm 0.003$ and PR AUC $0.5960 \pm 0.002$. We did not test why this endpoint is predictable.
+    \item \textbf{NR-AR-LBD:} XGBoost achieves ROC AUC $0.8570 \pm 0.002$, the highest ROC AUC among the nuclear-receptor endpoints; we did not investigate the cause.
 \end{itemize}
 
 \subsubsection{Challenging Endpoints}
 Conversely, endpoints such as NR-ER, SR-HSE, and SR-ATAD5 proved substantially more challenging:
 \begin{itemize}
-    \item \textbf{NR-ER (Estrogen Receptor):} Yields the lowest ROC AUC ($0.6850 \pm 0.004$ with RF), indicating complex conformational dynamics and promiscuous binding that 2D tabular features struggle to separate.
-    \item \textbf{SR-HSE \& SR-ATAD5:} While exhibiting acceptable ROC AUCs ($\approx 0.74$--$0.78$), their PR AUCs remain low ($0.267$ and $0.247$, respectively). In both cases, active compounds represent less than $4\%$ of the library, and cellular heat-shock or DNA-repair cascades can be triggered by diverse, structurally heterogeneous toxicophores.
+    \item \textbf{NR-ER (Estrogen Receptor):} Has the lowest best-model ROC AUC across the 12 endpoints ($0.685 \pm 0.004$ with RF); we did not investigate why.
+    \item \textbf{SR-HSE \& SR-ATAD5:} While exhibiting acceptable ROC AUCs ($\approx 0.74$--$0.78$), their PR AUCs remain low ($0.267$ and $0.247$, respectively). Active compounds are about $3.75\%$ of labeled SR-ATAD5 molecules and about $5.71\%$ of labeled SR-HSE molecules.
 \end{itemize}
-These difficult pathways underscore the intrinsic ceiling of 2D tabular representations and provide clear motivation for Phase 2, where deep graph architectures will learn multi-scale spatial and relational graph representations directly from molecular topology.
+These endpoints are natural ones to watch when the Phase 2 graph models are compared against this baseline.

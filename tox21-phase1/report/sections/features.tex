@@ -57,7 +57,7 @@ To eliminate data leakage between train, validation, and test partitions, we enc
 
 On the primary scaffold training split, four features were dropped due to near-constant variance ($\sigma \le 10^{-8}$): the three dataset-wide constants (\texttt{SMR\_VSA8}, \texttt{SlogP\_VSA9}, \texttt{fr\_diazo}) and an additional partition-specific constant (\texttt{fr\_azide}). Exactly 213 sanitized, finite descriptors were retained, yielding standardized features with zero training mean and unit variance.
 
-\subsection{Multi-Task Random Forest Architecture}
+\subsection{Random Forest Architecture (One Forest per Endpoint)}
 \label{subsec:rf}
 The Random Forest baseline~\cite{breiman2001random} was implemented via \texttt{MultiTaskRandomForest} to address two domain-specific constraints of Tox21:
 \begin{enumerate}
