@@ -8,6 +8,18 @@ from src.models.xgb import GRID as XGB_GRID
 from src.models.xgb import make_xgb
 
 
+def _xgboost_loads() -> bool:
+    """True if the xgboost native library can be loaded (on macOS it needs ``brew install libomp``)."""
+    try:
+        import xgboost  # noqa: F401
+    except Exception:
+        return False
+    return True
+
+
+requires_xgboost = pytest.mark.skipif(not _xgboost_loads(), reason="xgboost runtime unavailable (macOS: brew install libomp)")
+
+
 def tiny_data(n=120, d=6, seed=0):
     rng = np.random.default_rng(seed)
     X = rng.normal(size=(n, d))
@@ -34,7 +46,7 @@ def test_grid_within_budget(name):
     assert all(isinstance(p, dict) for p in grid)
 
 
-@pytest.mark.parametrize("name", ["logreg", "rf", "xgb"])
+@pytest.mark.parametrize("name", ["logreg", "rf", pytest.param("xgb", marks=requires_xgboost)])
 def test_factory_returns_fit_predict_proba_and_tiny_fit_works(name):
     make, grid = REGISTRY[name]
     X, y = tiny_data()
@@ -53,17 +65,20 @@ def test_xgb_grid_is_the_handbook_grid():
     assert XGB_GRID[-1] == dict(max_depth=6, learning_rate=0.03, n_estimators=600)
 
 
+@requires_xgboost
 def test_xgb_scale_pos_weight_is_neg_over_pos():
     y = np.array([1] * 5 + [0] * 45)
     model = make_xgb(XGB_GRID[0], y, seed=3)
     assert model.get_params()["scale_pos_weight"] == pytest.approx(45 / 5)
 
 
+@requires_xgboost
 def test_xgb_scale_pos_weight_floors_npos_at_one():
     y = np.zeros(30, dtype=int)
     assert make_xgb(XGB_GRID[0], y, seed=0).get_params()["scale_pos_weight"] == pytest.approx(30.0)
 
 
+@requires_xgboost
 def test_xgb_fixed_settings():
     p = make_xgb(XGB_GRID[7], np.array([0, 1, 0, 0]), seed=7).get_params()
     assert p["subsample"] == 0.8 and p["colsample_bytree"] == 0.5
