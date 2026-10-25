@@ -27,7 +27,7 @@ The raw download is intentionally not committed. Place `tox21.csv.gz` in
 ## Key Pipeline Conclusions & Findings
 
 ### 1. Molecular Representation & Feature Synergy
-- **Circular Morgan Fingerprints (ECFP4 Equivalent, 2048-bit, Radius 2):** Tox21 molecules exhibit an average active bit density of $49.34 \pm 18.21$ bits per molecule (median 47.0, range $[1, 137]$). 307 bit positions ($15.0\%$) are never activated across the dataset, while top motifs appear in up to $76.9\%$ of compounds.
+- **Circular Morgan Fingerprints (ECFP4 Equivalent, 2048-bit, Radius 2):** Tox21 molecules exhibit an average active bit density of $29.75 \pm 16.41$ bits per molecule (median 26.0, range $[1, 160]$). All 2,048 bit positions are activated across the dataset (0 unused bits), while the top motif appears in $71.73\%$ of compounds.
 - **RDKit 2D Molecular Descriptors (217 raw features):** Empirical analysis revealed 1,224 NaN cells and 6 infinite cells across 107 compounds (caused by undefined partial charges or zero-division topological indices). 3 descriptors are constant zero across all 7,709 molecules (`SMR_VSA8`, `SlogP_VSA9`, `fr_diazo`), and `fr_azide` is near-constant in scaffold training, leaving 213 retained descriptors.
 - **Hybrid Modality (`morgan+desc`, 2,261 features):** Combining localized topological fragments (Morgan) with bulk physicochemical parameters (lipophilicity $\log P$, polar surface area, molecular weight) provides complementary inductive biases without expanding dimensionality beyond tabular model feasibility.
 
