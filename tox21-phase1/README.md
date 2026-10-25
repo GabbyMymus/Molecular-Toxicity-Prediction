@@ -89,7 +89,9 @@ parallel runs do not overwrite each other.
 | Final runs | seeds 0, 1, 2 on both the scaffold and the random split |
 | Metrics | per endpoint ROC AUC and PR AUC on labeled rows; NaN when an evaluation set has a single class |
 | Grid size | 3 models x 2 feature sets x 2 splits x 3 seeds x 12 endpoints = 432 fitted classifiers (plus tuning) |
-### 1. Molecular Representation & Feature Synergy
+
+## Feature engineering summary
+
 - **Circular Morgan Fingerprints (ECFP4 Equivalent, 2048-bit, Radius 2):** Tox21 molecules exhibit an average active bit density of $29.75 \pm 16.41$ bits per molecule (median 26.0, range $[1, 160]$). All 2,048 bit positions are activated across the dataset (0 unused bits), while the top motif appears in $71.73\%$ of compounds.
 - **RDKit 2D Molecular Descriptors (217 raw features):** Empirical analysis revealed 1,224 NaN cells and 6 infinite cells across 107 compounds (caused by undefined partial charges or zero-division topological indices). 3 descriptors are constant zero across all 7,709 molecules (`SMR_VSA8`, `SlogP_VSA9`, `fr_diazo`), and `fr_azide` is near-constant in scaffold training, leaving 213 retained descriptors.
 - **Hybrid Modality (`morgan+desc`, 2,261 features):** Combining localized topological fragments (Morgan) with bulk physicochemical parameters (lipophilicity $\log P$, polar surface area, molecular weight) provides complementary inductive biases without expanding dimensionality beyond tabular model feasibility.
