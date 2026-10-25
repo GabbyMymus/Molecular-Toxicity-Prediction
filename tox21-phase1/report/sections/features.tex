@@ -15,7 +15,7 @@ To ensure deterministic encoding across the 7,709 unique molecules, fingerprints
     \item Storage format: \texttt{uint8} NumPy array of shape $(7{,}709, 2{,}048)$.
 \end{itemize}
 
-Empirical evaluation of the 2,048-bit Morgan vectors across the cleaned Tox21 dataset revealed an average on-bit density of $\mu = 49.34 \pm 18.21$ bits per molecule (median 47.0, range $[1, 137]$). Across the entire library, 307 bit positions ($14.99\%$) were never activated by any compound, while the most prevalent bit was activated in $76.88\%$ of molecules.
+Empirical evaluation of the 2,048-bit Morgan vectors across the cleaned Tox21 dataset revealed an average on-bit density of $\mu = 29.75 \pm 16.41$ bits per molecule (median 26.0, range $[1, 160]$). Across the entire library, all 2,048 bit positions are activated at least once (0 unused bits), while the most prevalent bit was activated in $71.73\%$ of molecules.
 
 \subsection{2D RDKit Molecular Descriptors}
 \label{subsec:descriptors}
