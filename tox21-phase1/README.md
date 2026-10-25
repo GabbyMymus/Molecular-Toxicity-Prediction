@@ -35,7 +35,10 @@ make setup                                           # pip install -r requiremen
 - **macOS needs `brew install libomp` for XGBoost.** Without it XGBoost cannot load: `make test` still runs
   (the 4 XGBoost-specific tests are skipped), but `make tune` and `make final-test` fail on the XGBoost model.
 - The raw download is not committed (`data/raw/` is ignored). The cleaned data and splits are committed,
-  so you do not need the raw file to run the experiments.
+  so you do not need the raw file to run the experiments. To rebuild them from the raw file, fetch it once
+  with `PYTHONPATH=. python scripts/01_clean_and_split.py --download` (it saves `tox21.csv.gz` from the
+  DeepChem copy into `data/raw/` and regenerates the data and splits), or place the file there yourself.
+  `make data` and `make all` do not download; they stop with a `FileNotFoundError` if the raw file is missing.
 
 ## Run
 
@@ -50,7 +53,7 @@ Every stage has one Make target:
 | `make test` | The pytest suite. Run `make features` first; two tests read the built feature arrays. |
 | `make data` | Re-creates the cleaned CSV, deduplication audit, and both canonical splits from `data/raw/tox21.csv` (or `.csv.gz`). |
 | `make eda` | Generates dataset and scaffold EDA figures in `figures/`. |
-| `make all` | `data features tune final-test figures`. |
+| `make all` | `data eda features tune final-test figures`. Needs the raw file for the `data` step (see Setup). |
 
 ### The test-set protocol
 
@@ -156,11 +159,6 @@ make test
 
 The harness tests use synthetic data, including throwaway git repositories that exercise every refusal
 condition of the final-test script.
-
-## Known issues
-
-- `make features` rewrites the tracked `features/feature_manifest.json` with local absolute paths; run
-  `git checkout features/feature_manifest.json` afterwards.
 
 ## Team
 
