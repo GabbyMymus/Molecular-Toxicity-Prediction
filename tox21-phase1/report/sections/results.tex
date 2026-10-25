@@ -64,6 +64,21 @@ The empirical evidence strongly confirms the utility of hybrid representations, 
     \item \textbf{Mechanistic Rationale:} Tree-based algorithms naturally construct orthogonal decision boundaries over continuous physical dimensions (e.g., partitioning compounds into lipophilic vs.\ hydrophilic regimes via $\log P$) and can conditionally query whether specific Morgan substructures are present within those regimes. In contrast, linear models assign static weights to individual features without interaction terms; consequently, Logistic Regression experiences only a modest $+0.0162$ gain in ROC AUC and virtually zero gain in PR AUC ($+0.0006$).
 \end{itemize}
 
+\subsection{Chemical Novelty of the Test Sets}
+\label{subsec:novelty}
+To quantify the domain shift induced by scaffold partitioning, we computed for each test molecule the maximum Tanimoto coefficient to any training molecule, using the 2,048-bit Morgan fingerprints:
+\begin{equation}
+    T(u, v) = \frac{|u \cap v|}{|u \cup v|} = \frac{\sum_i u_i v_i}{\sum_i u_i + \sum_i v_i - \sum_i u_i v_i}
+\end{equation}
+Figure~\ref{fig:tanimoto} shows the distributions. The mean maximum similarity to the training set is $0.584$ (median $0.575$) for the random-split test molecules and $0.428$ (median $0.396$) for the scaffold-split test molecules. A training analog with $T \ge 0.85$ exists for $9.3\%$ of the random-split test molecules (72 of 771) but for only $1.7\%$ of the scaffold-split test molecules (13 of 771). The scaffold test set is therefore markedly less similar to the training data, although it is not free of close analogs. Both test sets contain different molecules, and the scaffold test set contains no acyclic molecules (all 1,753 are in the training set).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\columnwidth]{tanimoto_similarity_distributions.png}
+\caption{Maximum Tanimoto similarity between test molecules and training molecules for the random and scaffold splits (2,048-bit Morgan fingerprints).}
+\label{fig:tanimoto}
+\end{figure}
+
 \subsection{Generalization Gap: The Scaffold Split Penalty}
 To evaluate the extent to which random splitting overestimates predictive generalization, we benchmarked the identical tuned configurations against the random split partition ($n=771$ test compounds). Table~\ref{tab:scaffold_penalty} and Figure~\ref{fig:scaffold_vs_random} contrast performance across both partitioning strategies.
 
@@ -95,7 +110,7 @@ The data reveals a severe and statistically significant ``scaffold penalty'' acr
     \item On random splits, all models appear to perform exceptionally well, achieving mean ROC AUCs exceeding $0.84$--$0.86$ and PR AUCs exceeding $0.48$--$0.56$.
     \item When subjected to scaffold splitting, performance declines precipitously: ROC AUC drops by $8.5$ to $10.9$ percentage points, while PR AUC drops by $14.2$ to $17.0$ percentage points.
     \item Random Forest exhibits the highest structural resilience (lowest generalization drop of $-0.0845$ in ROC and $-0.1421$ in PR).
-    \item This empirical drop directly mirrors the chemical novelty analysis established in Section~\ref{sec:dataset_eda}: when models cannot exploit memorized structural analogs sharing identical scaffold cores, their predictive power relies solely on generalizable physicochemical and topological motifs.
+    \item This empirical drop directly mirrors the chemical novelty analysis reported in Section~\ref{subsec:novelty}: when models cannot exploit memorized structural analogs sharing identical scaffold cores, their predictive power relies solely on generalizable physicochemical and topological motifs.
 \end{itemize}
 
 \subsection{Per-Endpoint Performance and Biological Heterogeneity}
