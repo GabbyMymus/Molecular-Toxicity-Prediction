@@ -139,11 +139,11 @@ bg = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, prs.slide_width, prs.slide_he
 bg.fill.solid(); bg.fill.fore_color.rgb = NAVY; bg.line.fill.background()
 text(s, 0.9, 1.9, 11.5, 1.8, ["Predicting Tox21 toxicity from molecular structure"], size=44, color=WHITE, bold=True)
 text(s, 0.9, 3.8, 11.5, 1.2, ["Phase 1: Morgan fingerprints, RDKit descriptors and classical ML\n(Logistic Regression, Random Forest, XGBoost)"], size=22, color=RGBColor(0xBF, 0xE3, 0xE8))
-text(s, 0.9, 5.6, 11.5, 0.9, ["Raghav  |  Ranajeet  |  Parrv  |  Abhijeet  |  fifth member (name to be added)"], size=18, color=WHITE)
+text(s, 0.9, 5.6, 11.5, 0.9, ["Raghav  |  Ranajeet  |  Parrv  |  Abhijeet  |  Malhar"], size=18, color=WHITE)
 s.notes_slide.notes_text_frame.text = (
     "Opening. We predict the outcome of 12 Tox21 toxicity assays from a molecule's structure. Phase 1 is the classical machine learning baseline "
     "and the evaluation machinery; the graph neural network is Phase 2. Team: Raghav (data, splits, Logistic Regression), Ranajeet (features, Random Forest), "
-    "Parrv (repository, evaluation harness, XGBoost, tuning and final test), Abhijeet (report and analysis); the fifth member's name is still to be added in the README. "
+    "Parrv (repository, evaluation harness, XGBoost, tuning and final test), Abhijeet (report and analysis); Malhar is Member 5 (QA and verification); the role is assigned and the QA tasks were completed by Parrv. "
     "Source: README team table.")
 
 # ---------- 2 problem and dataset ----------
@@ -365,16 +365,17 @@ text(s, 0.6, 1.5, 12.1, 5.4, [
 s = new_slide("Team contributions and Phase 2", (
     "Roles follow the Phase 1 team handbook and the README. Raghav: data cleaning, deduplication, EDA, splits, Logistic Regression. Ranajeet: Morgan fingerprints, RDKit descriptors, leak-free preprocessing, Random Forest. "
     "Parrv: repository structure and contract, evaluation harness, XGBoost, tuning and final-test scripts, reproducibility. Abhijeet: literature review, theory, results analysis, Tanimoto study, report. "
-    "The fifth member's name is still to be added in the README. Phase 2: a graph neural network trained on the same splits and protocol, compared against these baselines. "
+    "Malhar is Member 5 (QA and verification). The role is assigned; the QA tasks listed in the README are in progress, and those completed so far were done by Parrv. Phase 2: a graph neural network trained on the same splits and protocol, compared against these baselines. "
     "Reproducibility: make final-test regenerates results_test.csv; we reproduced all 432 rows to 1e-9."))
 rows = [["Member", "Contribution"],
         ["Raghav", "Data cleaning and deduplication, EDA, scaffold and random splits, Logistic Regression"],
         ["Ranajeet", "Morgan fingerprints, RDKit descriptors, leak-free preprocessing, Random Forest"],
         ["Parrv", "Repository and contract, evaluation harness, XGBoost, tuning and final-test scripts"],
         ["Abhijeet", "Literature review, theory, results analysis, Tanimoto study, report"],
-        ["Fifth member", "Slides, README polish, tests, viva preparation (name to be added)"]]
+        ["Malhar (Member 5, QA and verification)", "Assigned role; the QA tasks below were completed by Parrv."]]
 table(s, 0.6, 1.5, 12.1, rows, [2.2, 9.9], size=16, row_h=0.55)
 text(s, 0.6, 5.1, 12.1, 1.8, [
+    ("QA and verification (Member 5 role): in progress", {"bullet": True}),
     ("Phase 2: a graph neural network on the same splits and protocol, compared with these baselines", {"bullet": True}),
     ("Reproducible: make final-test regenerates results_test.csv (432 rows; matched the committed file to 1e-9)", {"bullet": True}),
 ], size=18)
