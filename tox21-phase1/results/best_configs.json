@@ -1,1 +1,30 @@
-{}
+{
+  "logreg|morgan": {
+    "C": 0.03,
+    "l1_ratio": 0.0
+  },
+  "logreg|morgan+desc": {
+    "C": 0.03,
+    "l1_ratio": 0.0
+  },
+  "rf|morgan": {
+    "n_estimators": 300,
+    "max_depth": null,
+    "min_samples_leaf": 1
+  },
+  "rf|morgan+desc": {
+    "n_estimators": 300,
+    "max_depth": null,
+    "min_samples_leaf": 1
+  },
+  "xgb|morgan": {
+    "max_depth": 6,
+    "learning_rate": 0.03,
+    "n_estimators": 600
+  },
+  "xgb|morgan+desc": {
+    "max_depth": 7,
+    "learning_rate": 0.05,
+    "n_estimators": 500
+  }
+}
