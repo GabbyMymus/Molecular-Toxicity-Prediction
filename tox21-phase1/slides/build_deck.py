@@ -1,6 +1,7 @@
 """Build slides/tox21_phase1.pptx from committed results, tables and figures.
 
 Usage (from tox21-phase1/): python slides/build_deck.py . slides/tox21_phase1.pptx  (needs python-pptx, pandas, pillow).
+"""
 import json
 import sys
 from pathlib import Path
