@@ -7,7 +7,7 @@ We train three distinct supervised learning algorithms, each fitted independentl
 \begin{itemize}
     \item \textbf{Logistic Regression (LR):} Implemented via Scikit-learn's~\cite{pedregosa2011scikit} \texttt{liblinear} coordinate descent solver with an L1 or L2 regularization penalty and a maximum iteration threshold of 2,000. Because liblinear with fixed tolerance is completely deterministic, seed variance across model fits is exactly $0.0000$.
     \item \textbf{Random Forest (RF):} Implemented using Breiman's~\cite{breiman2001random} ensemble of decorrelated classification trees via Scikit-learn's \texttt{RandomForestClassifier}. Splitting criteria evaluate Gini impurity across $\sqrt{d}$ candidate features per split.
-    \item \textbf{XGBoost (XGB):} Implemented via Chen and Guestrin's~\cite{chen2016xgboost} extreme gradient boosting system using histogram-optimized tree building. To prevent overfitting on sparse features, row subsampling is fixed at $0.80$, column subsampling per tree is set to $0.50$, and PR AUC (\texttt{aucpr}) is designated as the internal objective. Tree counts are incorporated into the tuning grid without early stopping to ensure strict separation of validation tuning from test evaluation.
+    \item \textbf{XGBoost (XGB):} Implemented via Chen and Guestrin's~\cite{chen2016xgboost} extreme gradient boosting system using histogram-optimized tree building. To prevent overfitting on sparse features, row subsampling is fixed at $0.80$, column subsampling per tree is set to $0.50$, and \texttt{aucpr} is used as the internal evaluation metric (the training objective is XGBoost's default logistic loss). Tree counts are incorporated into the tuning grid without early stopping to ensure strict separation of validation tuning from test evaluation.
 \end{itemize}
 
 \subsection{Class Imbalance Mitigation}
@@ -19,12 +19,12 @@ To address severe positive sparsity without distorting underlying molecular feat
 \end{itemize}
 
 \subsection{Tuning Protocol}
-To maintain rigorous fairness, every model family is allocated an identical search budget of exactly eight hyperparameter configurations (Table~\ref{tab:grids}). All configurations are trained on the scaffold training partition ($n=6{,}167$) and evaluated on the scaffold validation split ($n=771$) with seed 0. For each model family and feature modality, the configuration yielding the highest mean validation PR AUC across the 12 endpoints was selected (Table~\ref{tab:chosen}). 
+To maintain rigorous fairness, every model family is allocated an identical search budget of exactly eight hyperparameter configurations (Table~\ref{tab:grids}). All configurations are trained on the scaffold training partition ($n=6{,}167$) and evaluated on the scaffold validation split ($n=771$) with seed 0. For each model family and feature modality, the configuration yielding the highest mean validation PR AUC across the 12 endpoints (endpoints with an undefined metric are skipped) was selected (Table~\ref{tab:chosen}).
 
-The selected hyperparameter configurations were serialized to \texttt{results/best\_configs.json} and immutably committed to git version control (commit \texttt{041892c}) prior to executing any evaluation against the test partition. In accordance with the project contract, configurations tuned on the scaffold split were applied unchanged to the random split, guaranteeing that the test partition was touched strictly once during final evaluation.
+The selected hyperparameter configurations were serialized to \texttt{results/best\_configs.json} and immutably committed to git version control (commit \texttt{041892c}) prior to executing any evaluation against the test partition. In accordance with the project contract, configurations tuned on the scaffold split were applied unchanged to the random split, so the random split is not tuned separately. The test split is read only by the final run.
 
 \begin{table}[t]
-\caption{Pre-registered hyperparameter tuning grids (8 configurations per model).}
+\caption{Tuning grids, eight configurations per model.}
 \label{tab:grids}
 \centering\small
 \begin{tabular}{@{}lp{0.78\columnwidth}@{}}
@@ -60,10 +60,10 @@ XGB & morgan+desc & (7, 0.05, 500)             & 0.4307 \\
 \subsection{Evaluation Methodology and Metric Masking}
 For each endpoint, model predictions are evaluated using Receiver Operating Characteristic Area Under the Curve (ROC AUC) and Precision--Recall Area Under the Curve (PR AUC), calculated strictly over labeled test rows. If an evaluation partition possesses fewer than two distinct classes for a target, the metric is undefined (\texttt{NaN}) and omitted from aggregate averaging.
 
-Because active compounds are rare, PR AUC is reported as the primary metric of clinical and chemical relevance: while ROC AUC can appear inflated when true negatives dominate, PR AUC directly reflects the positive predictive value as a function of recall.
+PR AUC is reported next to ROC AUC because positives are rare: the PR AUC of a random model equals the positive rate, whereas ROC AUC can look good simply because negatives dominate.
 
-Final test experiments are executed across seeds 0, 1, and 2 on both the scaffold split and the random split. We report the mean and sample standard deviation across the three seeds. The full experimental design comprises:
+Final test experiments are executed across seeds 0, 1, and 2 on both the scaffold split and the random split. We report the mean and sample standard deviation across the three seeds. The seed controls model randomness only; the splits are fixed. LR with the liblinear solver is essentially deterministic, so its standard deviation over seeds is about $0$ (it is $0.0000$ to four decimals in our results); this is expected and does not indicate a bug. Per-endpoint metrics rest on few positives: the scaffold test split has between 20 (NR-AR-LBD) and 109 (SR-ARE) positive molecules per endpoint, so individual endpoint scores are noisy. If the labeled training rows of an endpoint contain a single class, that endpoint is not fitted and its predictions fall back to the training positive rate. The full experimental design comprises:
 \begin{equation*}
     3\text{ models} \times 2\text{ feature sets} \times 2\text{ splits} \times 3\text{ seeds} \times 12\text{ endpoints} = 432
 \end{equation*}
-fitted classifiers, all orchestrated through a unified, leak-free evaluation harness.
+fitted classifiers, in addition to the tuning runs. All models pass through one evaluation harness, so masking, class handling and metric code are identical for every model.
