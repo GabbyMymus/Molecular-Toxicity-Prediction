@@ -18,17 +18,21 @@ systems; keep this in mind when reading scaffold results.
 
 ## Setup
 
-Run everything from this directory (`tox21-phase1/`). Developed and tested on Python 3.14.
+The project lives in the `tox21-phase1/` subfolder of the repository, and every command below is run from
+there. Developed and tested on Python 3.14.
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-make setup            # pip install -r requirements.txt
+git clone https://github.com/GabbyMymus/Molecular-Toxicity-Prediction.git
+cd Molecular-Toxicity-Prediction/tox21-phase1
+python3 -m venv .venv && source .venv/bin/activate   # inside the venv, `python` works
+make setup                                           # pip install -r requirements.txt
 ```
 
 - **scikit-learn >= 1.8 is required.** Logistic Regression selects the L1 or L2 penalty from `l1_ratio`
   only from 1.8; on older versions the two L1 configurations in the grid silently fit as L2. This was
   checked on 1.3.2 to 1.9.1.
-- On macOS, XGBoost needs the OpenMP runtime: `brew install libomp`.
+- **macOS needs `brew install libomp` for XGBoost.** Without it XGBoost cannot load: `make test` still runs
+  (the 4 XGBoost-specific tests are skipped), but `make tune` and `make final-test` fail on the XGBoost model.
 - The raw download is not committed (`data/raw/` is ignored). The cleaned data and splits are committed,
   so you do not need the raw file to run the experiments.
 
