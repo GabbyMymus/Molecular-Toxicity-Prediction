@@ -1,2 +1,51 @@
-\section{Models}
-Logistic regression, random forest, and XGBoost are evaluated as multi-task baselines.
+\section{Models and Experimental Setup}
+\label{sec:models_setup}
+
+\subsection{Models}
+We train three classifiers, each fitted \emph{once per endpoint} on that endpoint's labeled training rows only. A molecule with a missing label for an endpoint is left out of that endpoint's training and evaluation; missing labels are never imputed as negatives. Every classifier is run on two feature sets: \texttt{morgan} (2048-bit, radius-2 fingerprints) and \texttt{morgan+desc} (the same bits plus RDKit descriptors, imputed, clipped and scaled with statistics fitted on the training rows only; Section~\ref{sec:features}).
+
+\emph{Logistic Regression (LR)} uses scikit-learn's liblinear solver with an L2 or L1 penalty and at most 2000 iterations. \emph{Random Forest (RF)} uses \texttt{RandomForestClassifier} with $\sqrt{d}$ candidate features per split. \emph{XGBoost (XGB)} uses histogram-based gradient-boosted trees with row subsampling $0.8$, column subsampling $0.5$ per tree and \texttt{aucpr} as its internal metric. There is no early stopping: the number of trees is part of the grid, so the validation split is used only for model selection.
+
+\emph{Class imbalance} is handled by weighting, not resampling, with the weights computed from each endpoint's own training labels: LR uses \texttt{class\_weight=balanced}, RF uses \texttt{balanced\_subsample} (weights recomputed on every bootstrap sample), and XGB uses $\texttt{scale\_pos\_weight}=n_{\mathrm{neg}}/n_{\mathrm{pos}}$.
+
+\subsection{Tuning protocol}
+Every model has a fixed grid of eight configurations (Table~\ref{tab:grids}), so all models get the same search budget on each feature set. Configurations are fitted on the training split and scored on the validation split with seed $0$, on the \emph{scaffold split only}. For each model and feature set we select the configuration with the highest validation PR AUC averaged over the 12 endpoints (endpoints with an undefined metric are skipped). The six selected configurations (Table~\ref{tab:chosen}) were written to \texttt{results/best\_configs.json} and committed to git before the test split was scored (commit \texttt{041892c}); the test split is read only by the final run. The configuration tuned on the scaffold split is reused unchanged for the random split, which is therefore not tuned separately.
+
+\begin{table}[t]
+\caption{Tuning grids, eight configurations per model.}
+\label{tab:grids}
+\centering\small
+\begin{tabular}{@{}lp{0.78\columnwidth}@{}}
+\toprule
+Model & Configurations \\
+\midrule
+LR  & $C\in\{0.01,0.03,0.1,0.3,1,3\}$ with L2; $C\in\{0.1,1\}$ with L1 \\
+RF  & 300 trees $\times$ max depth $\in\{\mathrm{none},30\}$ $\times$ min leaf $\in\{1,3,5\}$; plus (500 trees, none, 3) and (500, 30, 5) \\
+XGB & (depth, learning rate, trees): (3, 0.10, 300), (5, 0.10, 300), (7, 0.10, 300), (3, 0.05, 500), (5, 0.05, 500), (7, 0.05, 500), (4, 0.10, 400), (6, 0.03, 600) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Selected configurations and mean validation PR AUC (scaffold split, seed 0). RF: (trees, max depth, min leaf); XGB: (depth, learning rate, trees).}
+\label{tab:chosen}
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Model & Features & Selected & Val.\ PR AUC \\
+\midrule
+LR  & morgan      & L2, $C=0.03$       & 0.3475 \\
+LR  & morgan+desc & L2, $C=0.03$       & 0.3429 \\
+RF  & morgan      & (300, none, 1)     & 0.4000 \\
+RF  & morgan+desc & (300, none, 1)     & 0.4433 \\
+XGB & morgan      & (6, 0.03, 600)     & 0.3607 \\
+XGB & morgan+desc & (7, 0.05, 500)     & 0.4307 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+For every endpoint we compute ROC AUC and PR AUC on the labeled rows only (masking). If an evaluation set contains a single class for an endpoint, both metrics are undefined (NaN) and the endpoint is skipped when averaging. PR AUC is reported next to ROC AUC because positives are rare: the PR AUC of a random model equals the positive rate, whereas ROC AUC can look good simply because negatives dominate. Final runs use seeds $0$, $1$ and $2$ on both the scaffold and the random split, and we report the mean and standard deviation over seeds. The seed controls model randomness only; the splits are fixed. LR with the liblinear solver is essentially deterministic, so its standard deviation over seeds is about $0$ (it is $0.0000$ to four decimals in our results); this is expected and does not indicate a bug. Per-endpoint metrics rest on few positives: the scaffold test split has between 20 (NR-AR-LBD) and 109 (SR-ARE) positive molecules per endpoint, so individual endpoint scores are noisy.
+
+All models pass through one evaluation harness, so masking, class handling and metric code are identical for every model. If the labeled training rows of an endpoint contain a single class, that endpoint is not fitted and its predictions fall back to the training positive rate. The full grid is $3$ models $\times$ $2$ feature sets $\times$ $2$ splits $\times$ $3$ seeds $\times$ $12$ endpoints $=432$ fitted classifiers, in addition to the tuning runs.
