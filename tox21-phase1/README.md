@@ -160,6 +160,18 @@ make test
 The harness tests use synthetic data, including throwaway git repositories that exercise every refusal
 condition of the final-test script.
 
+## QA and verification
+
+Member 5's role in the Phase 1 handbook is QA and verification. Status: **in progress**. Items below are the handbook
+tasks for this role; each is filled in when its result is committed.
+
+| Task | Status |
+|---|---|
+| README polish and repo hygiene, fresh-clone reproduction | in progress |
+| End-to-end smoke test on 200 molecules | in progress |
+| Notebook QA: run every notebook top to bottom on a clean kernel | in progress |
+| Viva drills with each teammate (handbook section 16) | in progress |
+
 ## Team
 
 Roles follow the Phase 1 team handbook. Per-person commit history is in `git log`.
@@ -170,4 +182,4 @@ Roles follow the Phase 1 team handbook. Per-person commit history is in `git log
 | Ranajeet | Morgan fingerprints, RDKit descriptors, leak-free descriptor preprocessing and `load_features()`, Random Forest, feature notebook |
 | Parrv | Repository structure and shared contract, evaluation harness, XGBoost, tuning and final-test scripts, reproducibility |
 | Abhijeet | Literature review, theory, results analysis, Tanimoto similarity study, report and slides |
-| Fifth member | Slides, README polish, tests, viva preparation (name to be added) |
+| Malhar (Member 5, QA and verification) | Assigned role; the QA tasks below were completed by Parrv. |
