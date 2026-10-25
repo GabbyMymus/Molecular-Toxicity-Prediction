@@ -19,7 +19,8 @@ systems; keep this in mind when reading scaffold results.
 ## Setup
 
 The project lives in the `tox21-phase1/` subfolder of the repository, and every command below is run from
-there. Developed and tested on Python 3.14.
+there. **Python 3.11 or newer** is needed: `scikit-learn>=1.8` does not install on Python 3.9 (the macOS system
+`python3`), and 3.10 was not tested. Developed and tested on Python 3.14.
 
 ```bash
 git clone https://github.com/GabbyMymus/Molecular-Toxicity-Prediction.git
