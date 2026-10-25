@@ -43,7 +43,8 @@ Every stage has one Make target:
 | `make final-test` | **Touches the test set.** Runs `scripts/04_final_test.py --i-know-this-touches-test`. Writes `results/results_test.csv` and `results/preds/`. |
 | `make figures` | Report figures from `results/results_test.csv`. |
 | `make test` | The pytest suite. Run `make features` first; two tests read the built feature arrays. |
-| `make data` | Re-creates the cleaned CSV and splits from the raw file (see Known issues before using). |
+| `make data` | Re-creates the cleaned CSV, deduplication audit, and both canonical splits from `data/raw/tox21.csv` (or `.csv.gz`). |
+| `make eda` | Generates dataset and scaffold EDA figures in `figures/`. |
 | `make all` | `data features tune final-test figures`. |
 
 ### The test-set protocol
@@ -141,6 +142,7 @@ tox21-phase1/
 ## Tests
 
 ```bash
+make eda
 make features
 make test
 ```
@@ -150,10 +152,6 @@ condition of the final-test script.
 
 ## Known issues
 
-- `make data` regenerates the cleaned CSV and splits from the raw file, but the committed
-  `data/splits/scaffold_seed0.json` is not what the current `src/splits.py::scaffold_split` produces
-  (it yields a different, unbalanced split). Treat the committed files in `data/processed/` and
-  `data/splits/` as canonical and do not overwrite them until the data code is aligned.
 - `make features` rewrites the tracked `features/feature_manifest.json` with local absolute paths; run
   `git checkout features/feature_manifest.json` afterwards.
 
