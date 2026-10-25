@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from xgboost import XGBClassifier
+
+if TYPE_CHECKING:  # xgboost is imported inside make_xgb so that importing this module needs no OpenMP runtime
+    from xgboost import XGBClassifier
 
 GRID: list[dict[str, Any]] = [
     dict(max_depth=3, learning_rate=0.10, n_estimators=300),
@@ -25,6 +27,8 @@ def make_xgb(params: dict[str, Any], y_train: np.ndarray, seed: int) -> XGBClass
     ``scale_pos_weight = n_neg / n_pos`` is computed from this endpoint's labeled training
     labels (``y_train``, 1-D, values 0/1) with ``n_pos`` floored at 1. No early stopping.
     """
+    from xgboost import XGBClassifier
+
     y_train = np.asarray(y_train)
     n_pos = max(int(y_train.sum()), 1)
     n_neg = len(y_train) - int(y_train.sum())
