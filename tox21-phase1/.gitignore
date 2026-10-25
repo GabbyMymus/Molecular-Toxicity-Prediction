@@ -10,3 +10,6 @@ __pycache__/
 
 # Ranajeet's personal, local project modification log
 /ranajeet.md
+results/*.lock
+results/*.tmp
+results/logs/

@@ -10,10 +10,19 @@ label vector of labeled training rows only.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
-from collections.abc import Callable, Sequence
+import os
+import time
+from collections.abc import Callable, Iterator, Sequence
+from pathlib import Path
 from typing import Any
+
+try:  # POSIX only; file_lock degrades to a no-op elsewhere
+    import fcntl
+except ImportError:  # pragma: no cover
+    fcntl = None
 
 import numpy as np
 import pandas as pd
@@ -151,17 +160,41 @@ def clear_cache() -> None:
     _DATA_CACHE.clear()
 
 
-def _replace_rows(new: pd.DataFrame, path, keys: Sequence[str]) -> None:
-    """Write ``new`` to ``path``, first removing existing rows that share ``keys`` values with it."""
+@contextlib.contextmanager
+def file_lock(path: Path) -> Iterator[None]:
+    """Exclusive inter-process lock on the sidecar file ``<path>.lock``.
+
+    Serializes read-modify-write cycles when several tuning processes share a results file.
+    A no-op on platforms without ``fcntl``.
+    """
+    if fcntl is None:
+        yield
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.stat().st_size > 0:
-        old = pd.read_csv(path)
-        if set(keys) <= set(old.columns) and len(old):
-            combos = new[list(keys)].drop_duplicates()
-            merged = old.merge(combos.assign(_drop=1), on=list(keys), how="left")
-            old = old[merged["_drop"].isna().to_numpy()]
-        new = pd.concat([old, new], ignore_index=True)
-    new.to_csv(path, index=False)
+    with open(path.with_name(path.name + ".lock"), "w") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
+
+
+def _replace_rows(new: pd.DataFrame, path: Path, keys: Sequence[str]) -> None:
+    """Write ``new`` to ``path``, first removing existing rows that share ``keys`` values with it.
+
+    Safe to call from several processes at once: the read-modify-write runs under a file lock.
+    """
+    with file_lock(path):
+        if path.exists() and path.stat().st_size > 0:
+            old = pd.read_csv(path)
+            if set(keys) <= set(old.columns) and len(old):
+                combos = new[list(keys)].drop_duplicates()
+                merged = old.merge(combos.assign(_drop=1), on=list(keys), how="left")
+                old = old[merged["_drop"].isna().to_numpy()]
+            new = pd.concat([old, new], ignore_index=True)
+        tmp = path.with_name(path.name + ".tmp")
+        new.to_csv(tmp, index=False)
+        os.replace(tmp, path)
 
 
 def tune(
@@ -179,12 +212,20 @@ def tune(
     Xtr, Xva, _, Ytr, Yva, _ = _load_arrays(feature_set, split)
     rows = []
     for k, params in enumerate(grid):
+        t0 = time.perf_counter()
         P = fit_predict(make_model, params, Xtr, Ytr, Xva, seed=TUNE_SEED)
-        for r in score(Yva, P):
+        scored = score(Yva, P)
+        for r in scored:
             rows.append(
                 dict(model=name, feature_set=feature_set, split=split, seed=TUNE_SEED, config_id=k,
                      params=json.dumps(params), **r)
             )
+        pr = [r["pr_auc"] for r in scored if not np.isnan(r["pr_auc"])]
+        logger.info(
+            "tune %s|%s config %d/%d %s: mean val PR AUC %.4f (%.0fs)",
+            name, feature_set, k + 1, len(grid), json.dumps(params), np.mean(pr) if pr else np.nan,
+            time.perf_counter() - t0,
+        )
     df = pd.DataFrame(rows, columns=TUNING_COLUMNS)
     _replace_rows(df, RESULTS / "tuning_val.csv", ["model", "feature_set", "split", "seed"])
     mean_pr = df.groupby("config_id")["pr_auc"].apply(lambda s: np.nanmean(s) if s.notna().any() else np.nan)

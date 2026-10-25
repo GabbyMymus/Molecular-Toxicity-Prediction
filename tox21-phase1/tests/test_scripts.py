@@ -196,3 +196,31 @@ def test_merge_rejects_duplicate_rows(repo):
     final_script.main([FLAG, "--models", "rf", "--out", str(p)], DUMMY_REGISTRY)
     with pytest.raises(SystemExit, match="Duplicate"):
         merge_script.main([str(p), str(p)])
+
+
+def test_concurrent_record_best_keeps_every_key(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    path = tmp_path / "best_configs.json"
+    keys = [f"{m}|{fs}" for m in ("logreg", "rf", "xgb") for fs in FEATURE_SETS]
+    with ThreadPoolExecutor(max_workers=len(keys)) as pool:
+        list(pool.map(lambda k: tune_script.record_best(path, k, {"a": 1}, merge=True, local={}), keys * 5))
+    assert sorted(json.loads(path.read_text())) == sorted(keys)
+
+
+def test_concurrent_tuning_rows_are_not_lost(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    path = tmp_path / "tuning_val.csv"
+
+    def write(model):
+        for _ in range(5):
+            frame = pd.DataFrame({"model": [model] * 3, "feature_set": ["morgan"] * 3, "split": ["scaffold"] * 3,
+                                  "seed": [0] * 3, "config_id": [0, 1, 2]})
+            evaluate._replace_rows(frame, path, ["model", "feature_set", "split", "seed"])
+
+    models = ["a", "b", "c", "d"]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        list(pool.map(write, models))
+    out = pd.read_csv(path)
+    assert sorted(out["model"].unique()) == models and len(out) == 12
