@@ -1,7 +1,7 @@
 {
   "dataset": {
     "name": "Tox21",
-    "clean_csv_path": "/Users/ranajeetroy/Desktop/Molecular-Toxicity-Prediction/tox21-phase1/data/processed/tox21_clean.csv",
+    "clean_csv_path": "data/processed/tox21_clean.csv",
     "n_molecules": 7709,
     "row_hash_sha256": "0d406f18bc44ede1212741b1abcb1cb00982d8ea10a65a54363ad6a905a4d372"
   },
@@ -17,7 +17,7 @@
     "n_bits": 2048,
     "representation": "binary",
     "dtype": "uint8",
-    "artifact_path": "/Users/ranajeetroy/Desktop/Molecular-Toxicity-Prediction/tox21-phase1/features/morgan_2048.npy",
+    "artifact_path": "features/morgan_2048.npy",
     "shape": [
       7709,
       2048
@@ -27,7 +27,7 @@
     "source": "rdkit.Chem.Descriptors.descList",
     "n_raw_descriptors": 217,
     "dtype": "float64",
-    "artifact_path": "/Users/ranajeetroy/Desktop/Molecular-Toxicity-Prediction/tox21-phase1/features/descriptors_raw.npy",
+    "artifact_path": "features/descriptors_raw.npy",
     "shape": [
       7709,
       217
