@@ -152,25 +152,29 @@ tox21-phase1/
 ## Tests
 
 ```bash
-make eda
-make features
-make test
+make features        # builds features/*.npy; two tests read them and fail without this
+make test            # full suite
+python -m pytest -m smoke   # 200-molecule end-to-end smoke test only (writes nothing outside a temp folder)
 ```
+
+`make eda` is not needed for the tests; it regenerates the EDA figures and needs the cleaned data.
 
 The harness tests use synthetic data, including throwaway git repositories that exercise every refusal
 condition of the final-test script.
 
 ## QA and verification
 
-Member 5's role in the Phase 1 handbook is QA and verification. Status: **in progress**. Items below are the handbook
-tasks for this role; each is filled in when its result is committed.
+Member 5's role in the Phase 1 handbook is QA and verification. Results and what could not be verified are in
+[`docs/qa_report.md`](docs/qa_report.md); the viva question bank mapped to repo evidence is in
+[`docs/viva_drill.md`](docs/viva_drill.md).
 
 | Task | Status |
 |---|---|
-| README polish and repo hygiene, fresh-clone reproduction | in progress |
-| End-to-end smoke test on 200 molecules | in progress |
-| Notebook QA: run every notebook top to bottom on a clean kernel | in progress |
-| Viva drills with each teammate (handbook section 16) | in progress |
+| Fresh-clone reproduction following this README | done (see QA report); `make final-test` reproduced all 432 rows |
+| End-to-end smoke test on 200 molecules (`tests/test_smoke.py`) | done |
+| Notebook QA on a clean kernel | done: `02_features` and `03_analysis` run; `01_eda` fails as committed (Colab paths), fix proposed in the QA report |
+| Viva drills with each teammate (handbook section 16) | not run |
+| LICENSE / notes file | not required by the handbook; not added |
 
 ## Team
 
