@@ -1,2 +1,128 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{cite}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\begin{document}
+
 \section{Related Work}
-Classical fingerprints and molecular descriptors provide strong, interpretable baselines.
+\label{sec:related_work}
+
+Molecular toxicity prediction uses chemical representations and machine
+learning models to identify compounds that may trigger biological
+responses. Our study builds on prior research in toxicity benchmarking,
+molecular fingerprints, chemical descriptors, generalization evaluation,
+and class-imbalanced classification. These foundations motivate the
+comparison of classical machine learning models in Phase 1 and
+graph-based learning approaches in Phase 2.
+
+\subsection{Toxicity Benchmarks and Challenges}
+
+The Tox21 Data Challenge established a benchmark for predicting compound
+activity across 12 toxicity-related bioassays covering nuclear receptor
+and stress response pathways. DeepTox demonstrated the effectiveness
+of machine learning pipelines combining chemical features and predictive
+models for toxicity classification \cite{mayr2016deeptox}. MoleculeNet
+subsequently provided a standardized framework for evaluating molecular
+machine learning methods, including Tox21, and highlighted the importance
+of dataset partitioning and task-appropriate evaluation metrics
+\cite{wu2018moleculenet}.
+
+Tox21 presents two important challenges: missing labels and class
+imbalance. A compound may not have been tested in every assay; therefore,
+an unavailable label must not be interpreted as a negative result.
+Furthermore, active compounds constitute a minority of labeled samples
+for many endpoints. Accordingly, models must be trained and evaluated
+using only the available labels for each endpoint.
+
+\subsection{Molecular Representations}
+
+Extended-Connectivity Fingerprints (ECFP), described by Rogers and Hahn
+\cite{rogers2010extended}, represent molecules through their local atomic
+environments. Morgan fingerprints encode these environments as
+fixed-length binary vectors using hashing. In this study, radius-2
+Morgan fingerprints with 2048 bits are used, corresponding to the
+ECFP4 representation.
+
+Molecular descriptors provide complementary information by summarizing
+whole-molecule properties, such as molecular weight, lipophilicity,
+topological polar surface area, and hydrogen-bonding characteristics.
+Unlike fingerprints, which represent local structural environments,
+descriptors capture global physicochemical and structural properties.
+We therefore evaluate Morgan fingerprints alone and their combination
+with molecular descriptors to investigate the contribution of these
+complementary feature representations.
+
+\subsection{Generalization and Scaffold Splits}
+
+Bemis and Murcko introduced molecular frameworks that identify core
+structural scaffolds within compounds \cite{bemis1996properties}.
+In molecular machine learning, scaffold-based splitting groups molecules
+according to their Bemis--Murcko scaffolds and assigns scaffold groups
+to separate dataset partitions. This reduces the possibility of closely
+related molecular frameworks appearing in both training and evaluation
+sets.
+
+Random splitting can place structurally similar compounds in different
+partitions, potentially producing optimistic estimates of generalization
+to new chemical families. MoleculeNet discusses scaffold splitting as a
+more challenging alternative for evaluating molecular machine learning
+models \cite{wu2018moleculenet}. Accordingly, our experiments compare
+random and scaffold splits to examine how the choice of partitioning
+affects predictive performance on Tox21.
+
+\subsection{Evaluation Under Class Imbalance}
+
+Accuracy can be misleading in imbalanced classification because a model
+may achieve a high score by favoring the majority class while failing
+to identify active compounds. We therefore use the Receiver Operating
+Characteristic Area Under the Curve (ROC AUC) and Precision--Recall
+Area Under the Curve (PR AUC) to evaluate model performance.
+
+ROC AUC measures a model's ability to rank positive samples above
+negative samples. Precision--recall analysis focuses on the relationship
+between precision and recall and is particularly informative when the
+positive class is rare. Saito and Rehmsmeier discuss the usefulness of
+precision--recall curves for interpreting classifier performance on
+imbalanced datasets \cite{saito2015precision}. Unlike the ROC AUC
+reference level of 0.5 for random ranking, the baseline Average
+Precision of a random-ranking classifier is approximately equal to the
+positive-class prevalence.
+
+In our experiments, both metrics are calculated separately for each
+toxicity endpoint, excluding samples with missing labels. Class weights
+are also used where appropriate to reduce the influence of class
+imbalance during model training.
+
+\subsection{Learned Graph Representations and Phase 2 Motivation}
+
+Traditional molecular machine learning relies on predefined chemical
+representations, such as fingerprints and molecular descriptors.
+Graph neural networks provide an alternative by representing atoms as
+nodes and chemical bonds as edges, allowing molecular representations
+to be learned from graph structure.
+
+Gilmer et al. introduced the Message Passing Neural Network (MPNN)
+framework, in which atoms iteratively aggregate information from their
+neighbors and update their representations before a molecular-level
+prediction is produced \cite{gilmer2017neural}. Their study evaluated
+molecular property prediction on QM9, a quantum-chemistry dataset,
+rather than Tox21 toxicity classification. Its findings therefore
+motivate the investigation of learned molecular representations but do
+not establish that graph neural networks will outperform classical
+models on our task.
+
+Phase 1 establishes classical machine learning baselines using Logistic
+Regression, Random Forest, and XGBoost with Morgan fingerprints and
+molecular descriptors. The resulting evaluation framework provides a
+basis for a subsequent comparison with graph-based models in Phase 2,
+using consistent endpoint definitions and evaluation procedures.
+```
+% Paste your complete Related Work content here.
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
+```
