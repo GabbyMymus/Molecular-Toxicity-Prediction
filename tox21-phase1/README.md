@@ -89,10 +89,22 @@ The shared rules every script follows are in [`CONTRACT.md`](CONTRACT.md).
 
 ## Results
 
-<!-- RESULTS-TABLE-PLACEHOLDER: to be filled from results/results_test.csv after the final test run.
-     Do not add numbers by hand; generate this table from the CSV. -->
+Test-set results on the **scaffold split** (771 test molecules), from `results/results_test.csv` (432 rows:
+3 models x 2 feature sets x 2 splits x 3 seeds x 12 endpoints). Each cell is the mean over the 12 endpoints,
+then mean ± sample standard deviation over seeds 0, 1, 2; the best value in each column is in bold. Logistic
+Regression is deterministic, so its standard deviation over seeds is 0.000. Hyperparameters were chosen on the
+validation split and frozen in git (commit `041892c`) before the test split was scored. The random-split
+numbers are in the same CSV. Scaffold validation and test contain only ring-containing molecules, because all
+acyclic molecules are in the training set.
 
-_Results pending: no final test run has been made yet._
+| Model | Features | ROC AUC | PR AUC |
+|---|---|---|---|
+| Logistic Regression | morgan | 0.716 ± 0.000 | 0.312 ± 0.000 |
+| Logistic Regression | morgan+desc | 0.732 ± 0.000 | 0.312 ± 0.000 |
+| Random Forest | morgan | 0.729 ± 0.006 | 0.370 ± 0.002 |
+| Random Forest | morgan+desc | **0.776 ± 0.002** | **0.404 ± 0.004** |
+| XGBoost | morgan | 0.702 ± 0.003 | 0.318 ± 0.002 |
+| XGBoost | morgan+desc | 0.761 ± 0.004 | 0.401 ± 0.005 |
 
 ## Repository layout
 
