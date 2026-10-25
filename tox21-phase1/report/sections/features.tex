@@ -77,9 +77,10 @@ To eliminate silent row misalignment or split leakage across team members:
 
 \subsection{Scientific Limitations}
 \label{subsec:limitations}
-Three methodological caveats warrant explicit acknowledgment:
+Four methodological caveats warrant explicit acknowledgment:
 \begin{enumerate}
     \item \textbf{Bit Collisions:} Hashing an infinite chemical substructure space into $B = 2{,}048$ bins inevitably causes modulo collisions, wherein distinct chemical fragments map to identical bit indices.
     \item \textbf{Descriptor Collinearity:} High pairwise collinearity ($|r| \ge 0.95$ across 38 descriptor pairs, including molecular weight versus heavy atom count and surface area metrics) can induce variance in tree splitting.
     \item \textbf{Impurity-Based Feature Attribution:} Mean decrease in impurity (Gini importance) can disproportionately favor features with higher baseline occurrence or continuous granularity. Substructure attributions derived from bit importance must be treated as correlative hypotheses rather than verified causal pharmacophores.
+    \item \textbf{Bootstrap Scope:} The intervals in Section~\ref{sec:results} resample only the 771 scaffold test molecules, with the tuned configurations, the split and the three saved seeds held fixed, and no multiplicity correction across the ten paired differences; they describe test-sample uncertainty, not variation from retraining or from a different split.
 \end{enumerate}
