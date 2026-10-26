@@ -1,0 +1,39 @@
+\begin{table}[t]
+\caption{Scaffold test split: mean over 12 endpoints and 3 seeds with 95\% percentile bootstrap intervals (2000 resamples of the test molecules).}
+\label{tab:bootstrap_ci}
+\centering\small
+\begin{tabular}{@{}llcc@{}}
+\toprule
+Model & Features & ROC AUC [95\% CI] & PR AUC [95\% CI] \\
+\midrule
+Logistic Regression & Morgan & 0.716 [0.682, 0.749] & 0.312 [0.275, 0.376] \\
+Logistic Regression & Morgan + Desc & 0.732 [0.698, 0.763] & 0.312 [0.276, 0.375] \\
+Random Forest & Morgan & 0.729 [0.693, 0.761] & 0.370 [0.326, 0.432] \\
+Random Forest & Morgan + Desc & 0.776 [0.748, 0.806] & 0.404 [0.355, 0.468] \\
+XGBoost & Morgan & 0.702 [0.662, 0.738] & 0.318 [0.275, 0.382] \\
+XGBoost & Morgan + Desc & 0.761 [0.730, 0.792] & 0.401 [0.353, 0.466] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Paired bootstrap differences on the scaffold test split (same resamples for both sides). ``Yes'' means the 95\% interval contains 0.}
+\label{tab:bootstrap_diff}
+\centering\small
+\begin{tabular}{@{}llccc@{}}
+\toprule
+Difference & Context & Metric & Estimate [95\% CI] & Contains 0 \\
+\midrule
+RF $-$ XGBoost & Morgan & ROC AUC & +0.027 [-0.010, +0.062] & Yes \\
+RF $-$ XGBoost & Morgan & PR AUC & +0.052 [+0.027, +0.073] & No \\
+RF $-$ XGBoost & Morgan + Desc & ROC AUC & +0.016 [+0.003, +0.029] & No \\
+RF $-$ XGBoost & Morgan + Desc & PR AUC & +0.003 [-0.014, +0.018] & Yes \\
+Morgan+Desc $-$ Morgan & Logistic Regression & ROC AUC & +0.016 [-0.009, +0.042] & Yes \\
+Morgan+Desc $-$ Morgan & Logistic Regression & PR AUC & +0.001 [-0.032, +0.033] & Yes \\
+Morgan+Desc $-$ Morgan & Random Forest & ROC AUC & +0.047 [+0.022, +0.077] & No \\
+Morgan+Desc $-$ Morgan & Random Forest & PR AUC & +0.033 [+0.008, +0.063] & No \\
+Morgan+Desc $-$ Morgan & XGBoost & ROC AUC & +0.059 [+0.033, +0.083] & No \\
+Morgan+Desc $-$ Morgan & XGBoost & PR AUC & +0.083 [+0.052, +0.108] & No \\
+\bottomrule
+\end{tabular}
+\end{table}
