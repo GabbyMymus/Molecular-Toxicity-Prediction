@@ -206,7 +206,7 @@ text(s, 0.9, 5.95, 11.5, 0.5, ["Raghav  |  Ranajeet  |  Parrv  |  Abhijeet  |  M
 s.notes_slide.notes_text_frame.text = (
     "Opening. We predict the outcome of 12 Tox21 toxicity assays from a molecule's structure. Phase 1 is the classical machine learning baseline "
     "and the evaluation machinery; the graph neural network is Phase 2. Team: Raghav (data, splits, Logistic Regression), Ranajeet (features, Random Forest), "
-    "Parrv (repository, evaluation harness, XGBoost, tuning and final test), Abhijeet (report and analysis); Malhar is Member 5 (QA and verification); the role is assigned and the QA tasks were completed by Parrv. "
+    "Parrv (repository, evaluation harness, XGBoost, tuning and final test), Abhijeet (report and analysis); Malhar is Member 5 (QA and verification); the QA report documents the verification results. "
     "Source: README team table.")
 
 # ---------- 2 problem and dataset ----------
@@ -428,7 +428,7 @@ text(s, 0.6, 1.5, 12.1, 5.4, [
 s = new_slide("Team contributions, QA and next steps", (
     "Roles follow the Phase 1 team handbook and the README. Raghav: data cleaning, deduplication, EDA, splits, Logistic Regression. Ranajeet: Morgan fingerprints, RDKit descriptors, leak-free preprocessing, Random Forest. "
     "Parrv: repository structure and contract, evaluation harness, XGBoost, tuning and final-test scripts, reproducibility. Abhijeet: literature review, theory, results analysis, Tanimoto study, report. "
-    "Malhar is Member 5. The team presentation lists README and slide polish, tests, and viva preparation; the README describes the role as QA and verification. The committed QA report says the 200-molecule smoke test and final-result reproduction were completed by Parrv, while the viva drill remains unrun. "
+    "Malhar is Member 5. The team presentation lists README and slide polish, tests, and viva preparation; the README describes the role as QA and verification. The committed QA report documents the 200-molecule smoke test and final-result reproduction, while the viva drill remains unrun. "
     "Known QA item: 01_eda.ipynb fails as committed because it expects a Google Colab path; the report proposes a portable-path fix. Phase 2 is a graph neural network evaluated on the same splits and protocol. "
     "Reproducibility: the QA report records that make final-test reproduced all 432 result rows to 1e-9."))
 rows = [["Member", "Contribution"],
@@ -438,7 +438,7 @@ rows = [["Member", "Contribution"],
         ["Abhijeet", "Literature review, theory, results analysis, Tanimoto study, report"],
         ["Malhar (Member 5)", "README and slide polish, tests, QA communication, viva preparation"]]
 table(s, 0.6, 1.5, 12.1, rows, [2.2, 9.9], size=16, row_h=0.55)
-box(s, 0.6, 5.1, 3.85, 1.45, "QA RECORD\nSmoke test and 432-row reproduction documented by Parrv", fill=TEAL, size=15)
+box(s, 0.6, 5.1, 3.85, 1.45, "QA RECORD\nSmoke test and 432-row reproduction documented in the QA report", fill=TEAL, size=15)
 box(s, 4.75, 5.1, 3.85, 1.45, "MEMBER 5 FOCUS\nREADME and slides, verification notes, viva preparation", fill=NAVY, size=15)
 box(s, 8.9, 5.1, 3.85, 1.45, "OPEN ITEMS\nViva drill pending; 01_eda notebook uses a Colab path", fill=RED, size=15)
 

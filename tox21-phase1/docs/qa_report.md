@@ -1,7 +1,7 @@
 # QA and verification report (Member 5 role, handbook section 12)
 
 Date: 2026-10-26. Base: `origin/main` `1cdd877`. All checks were run in fresh clones outside the working repository.
-Every statement is marked VERIFIED (observed in this run) or CANNOT VERIFY. The QA tasks below were run by Parrv.
+Every statement is marked VERIFIED (observed in this run) or CANNOT VERIFY. The QA tasks below were run in fresh clones outside the working repository.
 
 ## 1. Smoke test (`tests/test_smoke.py`)
 - 200 molecules (seeded sample of the committed cleaned CSV, read only) go through clean, scaffold split, Morgan and

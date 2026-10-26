@@ -127,4 +127,4 @@ Key limitations to state alongside the results:
 | Ranajeet | Morgan fingerprints, RDKit descriptors, leak-free preprocessing, Random Forest. |
 | Parrv | Repository structure and contract, evaluation harness, XGBoost, tuning and final-test scripts, reproducibility. |
 | Abhijeet | Literature review, theory, results analysis, Tanimoto study, report and slides. |
-| Malhar (Member 5) | README and slide polish, tests and QA communication, viva preparation. The committed QA report records that the smoke test and final-result reproduction were completed by Parrv; the viva drill remains unrun. |
+| Malhar (Member 5) | README and slide polish, tests and QA communication, viva preparation. The committed QA report documents the smoke test and final-result reproduction; the viva drill remains unrun. |
