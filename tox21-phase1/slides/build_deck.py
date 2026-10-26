@@ -4,7 +4,9 @@ Usage (from tox21-phase1/): python slides/build_deck.py . slides/tox21_phase1.pp
 """
 import json
 import sys
+from zipfile import ZIP_DEFLATED, ZipFile
 from pathlib import Path
+from xml.dom import minidom
 
 import pandas as pd
 from PIL import Image
@@ -58,7 +60,7 @@ def text(slide, x, y, w, h, paras, size=18, color=NAVY, bold=False, align=PP_ALI
         run.font.size = Pt(o.get("size", size))
         run.font.bold = o.get("bold", bold)
         run.font.color.rgb = o.get("color", color)
-        run.font.name = "Calibri"
+        run.font.name = "Arial"
         para.alignment = align
         para.space_after = Pt(o.get("space", 8))
     return tb
@@ -100,12 +102,14 @@ def table(slide, x, y, w, rows, col_w, size=14, row_h=0.4, bold_cells=(), first_
             tf.word_wrap = True
             p = tf.paragraphs[0]
             r = p.add_run(); r.text = str(rows[i][j])
-            r.font.size = Pt(size); r.font.name = "Calibri"
+            r.font.size = Pt(size); r.font.name = "Arial"
             r.font.bold = (i == 0) or ((i, j) in bold_cells)
             p.alignment = PP_ALIGN.LEFT if (j == 0 and first_col_left) or j < 0 else PP_ALIGN.CENTER
             c.fill.solid()
             if i == 0:
                 c.fill.fore_color.rgb = NAVY; r.font.color.rgb = WHITE
+            elif (i, j) in bold_cells:
+                c.fill.fore_color.rgb = RGBColor(0xD8, 0xEF, 0xEA); r.font.color.rgb = NAVY
             else:
                 c.fill.fore_color.rgb = LIGHT if i % 2 else WHITE; r.font.color.rgb = NAVY
     return t
@@ -120,7 +124,7 @@ def box(slide, x, y, w, h, label, fill=TEAL, size=15):
     for k, ln in enumerate(lines):
         p = tf.paragraphs[0] if k == 0 else tf.add_paragraph()
         p.alignment = PP_ALIGN.CENTER
-        r = p.add_run(); r.text = ln; r.font.name = "Calibri"; r.font.color.rgb = WHITE
+        r = p.add_run(); r.text = ln; r.font.name = "Arial"; r.font.color.rgb = WHITE
         r.font.size = Pt(size if k == 0 else size - 3); r.font.bold = (k == 0)
     return sh
 
@@ -131,6 +135,62 @@ def arrow(slide, x, y, w=0.35):
 
 
 def f4(v): return f"{v:.4f}"
+
+
+def polish_package(path):
+    """Apply portable type and project colors to the Office XML package."""
+    temp = path.with_name(path.stem + ".polished.pptx")
+    colors = {
+        "dk1": "142B4D", "lt1": "FFFFFF", "dk2": "142B4D", "lt2": "EAF3F5",
+        "accent1": "1B7F8C", "accent2": "B23A3A", "accent3": "555F6B",
+        "accent4": "BFE3E8", "accent5": "88B8BD", "accent6": "F2C9C4",
+    }
+    with ZipFile(path) as source, ZipFile(temp, "w", ZIP_DEFLATED) as target:
+        for item in source.infolist():
+            data = source.read(item.filename)
+            if item.filename in {"ppt/theme/theme1.xml", "docProps/core.xml"} or item.filename.startswith(("ppt/slides/slide", "ppt/notesSlides/notesSlide")) and item.filename.endswith(".xml"):
+                doc = minidom.parseString(data)
+                if item.filename == "ppt/theme/theme1.xml":
+                    for node in doc.getElementsByTagName("a:latin"):
+                        node.setAttribute("typeface", "Arial")
+                    schemes = doc.getElementsByTagName("a:clrScheme")
+                    if schemes:
+                        for name, value in colors.items():
+                            entries = schemes[0].getElementsByTagName(f"a:{name}")
+                            if not entries:
+                                continue
+                            entry = entries[0]
+                            for child in list(entry.childNodes):
+                                if child.nodeType == child.ELEMENT_NODE:
+                                    entry.removeChild(child)
+                            color = doc.createElement("a:srgbClr")
+                            color.setAttribute("val", value)
+                            entry.appendChild(color)
+                elif item.filename == "docProps/core.xml":
+                    metadata = {
+                        "dc:title": "Tox21 Phase 1: Molecular Toxicity Prediction",
+                        "dc:subject": "Reproducible classical machine learning benchmark on 12 Tox21 assays",
+                        "dc:creator": "Molecular Toxicity Prediction Team",
+                        "cp:keywords": "Tox21, toxicity prediction, molecular fingerprints, RDKit, machine learning",
+                        "dc:description": "Phase 1 benchmark comparing Logistic Regression, Random Forest and XGBoost with Morgan fingerprints and RDKit descriptors under scaffold and random splits.",
+                        "cp:lastModifiedBy": "Molecular Toxicity Prediction Team",
+                        "cp:category": "Computational toxicology",
+                    }
+                    for tag, value in metadata.items():
+                        nodes = doc.getElementsByTagName(tag)
+                        if nodes:
+                            node = nodes[0]
+                            while node.firstChild:
+                                node.removeChild(node.firstChild)
+                            node.appendChild(doc.createTextNode(value))
+                else:
+                    for node in doc.getElementsByTagName("a:latin"):
+                        node.setAttribute("typeface", "Arial")
+                    for node in list(doc.getElementsByTagName("a:rPr")) + list(doc.getElementsByTagName("a:endParaRPr")):
+                        node.setAttribute("dirty", "0")
+                data = doc.toxml(encoding="UTF-8")
+            target.writestr(item.filename, data)
+    temp.replace(path)
 
 
 # ---------- 1 title ----------
@@ -267,7 +327,7 @@ for i, r in summ.iterrows():
 ib = summ.ROC_AUC_mean.idxmax() + 1; ip = summ.PR_AUC_mean.idxmax() + 1
 bold |= {(ib, 2), (ip, 3)}
 table(s, 0.6, 1.5, 8.2, rows, [2.4, 1.9, 1.95, 1.95], size=15, row_h=0.5, bold_cells=bold)
-text(s, 0.6, 5.2, 8.2, 1.6, [("Scaffold test, mean over 12 endpoints, then mean ± sample sd over seeds 0, 1, 2. Bold = highest value in the column. LR is deterministic (sd 0.0000).", {"size": 14, "color": GREY})])
+text(s, 0.6, 5.2, 8.2, 1.6, [("Scaffold test; mean over 12 endpoints, then mean ± sample sd over seeds 0, 1, 2. Bold + teal highlight marks the column best. LR is deterministic (sd 0.0000).", {"size": 14, "color": GREY})])
 text(s, 9.1, 1.5, 3.7, 5.3, [
     ("Reading the table", {"bold": True, "size": 19}),
     ("Random Forest + descriptors has the highest mean ROC (0.7762) and PR AUC (0.4035) in our runs", {"bullet": True, "size": 16}),
@@ -324,7 +384,7 @@ for i, e in enumerate(piv_r.index, start=1):
     bold.add((i, 1 + vr.index(max(vr)))); bold.add((i, 4 + vp.index(max(vp))))
 table(s, 0.6, 1.4, 8.4, rows, [2.1, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05], size=12, row_h=0.4, bold_cells=bold)
 text(s, 9.3, 1.5, 3.6, 5.3, [
-    ("Bold = highest in the row", {"size": 14, "color": GREY}),
+    ("Bold + teal highlight = highest in the row", {"size": 14, "color": GREY}),
     ("RF has the highest ROC on 9 of 12 endpoints, XGBoost on 3", {"bullet": True, "size": 16}),
     ("PR AUC: RF highest on 8, XGBoost on 4, LR on none", {"bullet": True, "size": 16}),
     ("Lowest best PR AUC: SR-ATAD5 (0.247) and SR-HSE (0.267)", {"bullet": True, "size": 16}),
@@ -384,4 +444,5 @@ box(s, 8.9, 5.1, 3.85, 1.45, "OPEN ITEMS\nViva drill pending; 01_eda notebook us
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 prs.save(OUT)
+polish_package(OUT)
 print("saved", OUT, count[0], "slides")
