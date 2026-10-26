@@ -137,9 +137,12 @@ def f4(v): return f"{v:.4f}"
 s = prs.slides.add_slide(BLANK); count[0] += 1
 bg = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, prs.slide_width, prs.slide_height)
 bg.fill.solid(); bg.fill.fore_color.rgb = NAVY; bg.line.fill.background()
+accent = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.62), Inches(1.92), Inches(0.08), Inches(3.9))
+accent.fill.solid(); accent.fill.fore_color.rgb = TEAL; accent.line.fill.background()
 text(s, 0.9, 1.9, 11.5, 1.8, ["Predicting Tox21 toxicity from molecular structure"], size=44, color=WHITE, bold=True)
 text(s, 0.9, 3.8, 11.5, 1.2, ["Phase 1: Morgan fingerprints, RDKit descriptors and classical ML\n(Logistic Regression, Random Forest, XGBoost)"], size=22, color=RGBColor(0xBF, 0xE3, 0xE8))
-text(s, 0.9, 5.6, 11.5, 0.9, ["Raghav  |  Ranajeet  |  Parrv  |  Abhijeet  |  Malhar"], size=18, color=WHITE)
+text(s, 0.9, 5.15, 11.5, 0.45, ["7,709 molecules     •     12 assay endpoints     •     3 model families"], size=17, color=WHITE, bold=True)
+text(s, 0.9, 5.95, 11.5, 0.5, ["Raghav  |  Ranajeet  |  Parrv  |  Abhijeet  |  Malhar"], size=16, color=RGBColor(0xBF, 0xE3, 0xE8))
 s.notes_slide.notes_text_frame.text = (
     "Opening. We predict the outcome of 12 Tox21 toxicity assays from a molecule's structure. Phase 1 is the classical machine learning baseline "
     "and the evaluation machinery; the graph neural network is Phase 2. Team: Raghav (data, splits, Logistic Regression), Ranajeet (features, Random Forest), "
@@ -362,23 +365,22 @@ text(s, 0.6, 1.5, 12.1, 5.4, [
 ], size=19)
 
 # ---------- 13 team and next ----------
-s = new_slide("Team contributions and Phase 2", (
+s = new_slide("Team contributions, QA and next steps", (
     "Roles follow the Phase 1 team handbook and the README. Raghav: data cleaning, deduplication, EDA, splits, Logistic Regression. Ranajeet: Morgan fingerprints, RDKit descriptors, leak-free preprocessing, Random Forest. "
     "Parrv: repository structure and contract, evaluation harness, XGBoost, tuning and final-test scripts, reproducibility. Abhijeet: literature review, theory, results analysis, Tanimoto study, report. "
-    "Malhar is Member 5 (QA and verification). The role is assigned; the QA tasks listed in the README are in progress, and those completed so far were done by Parrv. Phase 2: a graph neural network trained on the same splits and protocol, compared against these baselines. "
-    "Reproducibility: make final-test regenerates results_test.csv; we reproduced all 432 rows to 1e-9."))
+    "Malhar is Member 5. The team presentation lists README and slide polish, tests, and viva preparation; the README describes the role as QA and verification. The committed QA report says the 200-molecule smoke test and final-result reproduction were completed by Parrv, while the viva drill remains unrun. "
+    "Known QA item: 01_eda.ipynb fails as committed because it expects a Google Colab path; the report proposes a portable-path fix. Phase 2 is a graph neural network evaluated on the same splits and protocol. "
+    "Reproducibility: the QA report records that make final-test reproduced all 432 result rows to 1e-9."))
 rows = [["Member", "Contribution"],
         ["Raghav", "Data cleaning and deduplication, EDA, scaffold and random splits, Logistic Regression"],
         ["Ranajeet", "Morgan fingerprints, RDKit descriptors, leak-free preprocessing, Random Forest"],
         ["Parrv", "Repository and contract, evaluation harness, XGBoost, tuning and final-test scripts"],
         ["Abhijeet", "Literature review, theory, results analysis, Tanimoto study, report"],
-        ["Malhar (Member 5, QA and verification)", "Assigned role; the QA tasks below were completed by Parrv."]]
+        ["Malhar (Member 5)", "README and slide polish, tests, QA communication, viva preparation"]]
 table(s, 0.6, 1.5, 12.1, rows, [2.2, 9.9], size=16, row_h=0.55)
-text(s, 0.6, 5.1, 12.1, 1.8, [
-    ("QA and verification (Member 5 role): in progress", {"bullet": True}),
-    ("Phase 2: a graph neural network on the same splits and protocol, compared with these baselines", {"bullet": True}),
-    ("Reproducible: make final-test regenerates results_test.csv (432 rows; matched the committed file to 1e-9)", {"bullet": True}),
-], size=18)
+box(s, 0.6, 5.1, 3.85, 1.45, "QA RECORD\nSmoke test and 432-row reproduction documented by Parrv", fill=TEAL, size=15)
+box(s, 4.75, 5.1, 3.85, 1.45, "MEMBER 5 FOCUS\nREADME and slides, verification notes, viva preparation", fill=NAVY, size=15)
+box(s, 8.9, 5.1, 3.85, 1.45, "OPEN ITEMS\nViva drill pending; 01_eda notebook uses a Colab path", fill=RED, size=15)
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 prs.save(OUT)
