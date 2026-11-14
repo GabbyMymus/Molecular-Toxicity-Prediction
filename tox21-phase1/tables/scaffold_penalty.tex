@@ -1,0 +1,13 @@
+\begin{table}
+\caption{Scaffold split penalty: generalization drop compared to random split (Morgan+Desc)}
+\label{tab:scaffold_penalty}
+\begin{tabular}{lrrrrrr}
+\toprule
+model_label & Scaffold_ROC & Scaffold_PR & Random_ROC & Random_PR & Delta_ROC_scaf_minus_rand & Delta_PR_scaf_minus_rand \\
+\midrule
+Logistic Regression & 0.731744 & 0.312217 & 0.840500 & 0.481750 & -0.108800 & -0.169500 \\
+Random Forest & 0.776175 & 0.403510 & 0.860706 & 0.545624 & -0.084500 & -0.142100 \\
+XGBoost & 0.760601 & 0.400958 & 0.862065 & 0.564658 & -0.101500 & -0.163700 \\
+\bottomrule
+\end{tabular}
+\end{table}

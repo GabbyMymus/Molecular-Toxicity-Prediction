@@ -1,2 +1,31 @@
-\section{Conclusion}
-Phase 2 will investigate graph neural networks and hybrid molecular representations.
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+
+\subsection{Summary of Phase 1 Deliverables}
+Phase 1 of this investigation established a leak-free and reproducible classical machine learning benchmark for multi-assay toxicity prediction on the Tox21 dataset ($7{,}709$ unique compounds across 12 toxicological pathways). By systematically evaluating Logistic Regression, Random Forest, and XGBoost across 432 final experimental fits, we established several key findings:
+\begin{enumerate}
+    \item \textbf{Synergy of Hybrid Representations:} Augmenting localized circular Morgan fingerprints with 213 preprocessed, leak-free 2D RDKit physicochemical descriptors improved the tree models' scores; Logistic Regression's PR AUC gain was only $+0.0006$. Gradient boosting (XGBoost) gained the most, $+0.0586$ in ROC AUC and $+0.0829$ in PR AUC. We did not test why.
+    \item \textbf{Highest Mean Score:} A Random Forest (one forest per endpoint, balanced-subsample class weights) had the highest mean on the scaffold split, with ROC AUC $0.7762 \pm 0.0020$ and PR AUC $0.4035 \pm 0.0042$. XGBoost was within about $0.003$ PR AUC, less than the seed standard deviation.
+    \item \textbf{Lower Scores on the Scaffold Split:} Comparing identical configurations on hybrid features, scores were lower on the scaffold split by $0.085$ to $0.109$ in ROC AUC and $0.142$ to $0.170$ in PR AUC. The two test sets contain different molecules and positive counts, and we ran no significance test, so this is not a controlled measure of leakage.
+    \item \textbf{Endpoint Differences:} SR-MMP, NR-AhR and NR-AR-LBD reach ROC AUC above $0.84$ for their best model, whereas SR-HSE and SR-ATAD5 have the lowest best PR AUCs ($0.267$ and $0.247$). Each endpoint's scaffold test set has only 20 to 109 positives.
+\end{enumerate}
+
+\subsection{Methodological Principles for In Silico Toxicology}
+Our findings highlight four critical methodological best practices:
+\begin{itemize}
+    \item \textbf{Strict Target Masking:} Unmeasured assay labels must never be imputed as inactive negatives; doing so corrupts the label distribution and introduces severe false-negative bias.
+    \item \textbf{Dual Metric Evaluation:} Precision--Recall AUC is indispensable alongside ROC AUC. On highly imbalanced assays ($<5\%$ actives), ROC AUC can mask poor precision, whereas PR AUC directly reflects screening enrichment.
+    \item \textbf{Leak-Free Preprocessing Isolation:} Continuous descriptor cleaning (outlier clipping, imputation, and standardization) must be fitted exclusively on training splits to prevent subtle data leakage.
+    \item \textbf{Freezing Before Testing:} Committing hyperparameter selections made on validation data before test evaluation prevents tuning on the test partition.
+\end{itemize}
+
+\subsection{Phase 2 Research Roadmap}
+Phase 1 establishes the tabular performance ceiling for Tox21, providing the rigorous foundation for Phase 2, which will explore geometric deep learning and graph neural networks (GNNs):
+\begin{itemize}
+    \item \textbf{Graph Representation Learning:} We will implement Message Passing Neural Networks (MPNN)~\cite{gilmer2017neural}, Graph Convolutional Networks (GCN), and Graph Attention Networks (GAT) to learn node (atom) and edge (bond) representations directly from 2D molecular graphs, bypassing hand-crafted fingerprint hashing collisions.
+    \item \textbf{Hybrid Graph-Physicochemical Fusion:} We will investigate multi-modal neural architectures that fuse learned molecular graph embeddings with global RDKit physicochemical descriptors, testing whether end-to-end representation learning can capture subtle stereoelectronic interactions missed by tabular estimators.
+    \item \textbf{Mitigating the Scaffold Generalization Gap:} A central inquiry of Phase 2 will be evaluating whether self-supervised molecular graph pre-training (e.g., masked atom reconstruction or contrastive subgraph learning) can attenuate the lower scaffold-split scores reported here.
+    \item \textbf{Multi-Task Latent Sharing:} While Phase 1 fitted separate models per endpoint, Phase 2 will deploy unified multi-task graph encoders with shared latent representations to exploit biological pathway cross-talk between nuclear receptor and stress response pathways.
+\end{itemize}
+
+In conclusion, Phase 1 establishes a reproducible baseline in which hybrid features improved the tree models, and provides the comparison point for subsequent graph deep learning architectures.

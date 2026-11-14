@@ -1,0 +1,37 @@
+endpoint,model_label,ROC_mean,ROC_std,PR_mean,PR_std
+NR-AR,Logistic Regression,0.691,0.0,0.374,0.0
+NR-AR,Random Forest,0.764,0.013,0.456,0.002
+NR-AR,XGBoost,0.723,0.009,0.464,0.009
+NR-AR-LBD,Logistic Regression,0.775,0.0,0.342,0.0
+NR-AR-LBD,Random Forest,0.838,0.016,0.446,0.003
+NR-AR-LBD,XGBoost,0.857,0.002,0.442,0.017
+NR-AhR,Logistic Regression,0.806,0.0,0.445,0.0
+NR-AhR,Random Forest,0.841,0.003,0.596,0.002
+NR-AhR,XGBoost,0.833,0.002,0.574,0.01
+NR-Aromatase,Logistic Regression,0.695,0.0,0.216,0.0
+NR-Aromatase,Random Forest,0.751,0.009,0.367,0.005
+NR-Aromatase,XGBoost,0.728,0.014,0.362,0.008
+NR-ER,Logistic Regression,0.631,0.0,0.27,0.0
+NR-ER,Random Forest,0.685,0.004,0.407,0.005
+NR-ER,XGBoost,0.674,0.011,0.404,0.008
+NR-ER-LBD,Logistic Regression,0.705,0.0,0.246,0.0
+NR-ER-LBD,Random Forest,0.742,0.01,0.31,0.006
+NR-ER-LBD,XGBoost,0.664,0.024,0.299,0.005
+NR-PPAR-gamma,Logistic Regression,0.708,0.0,0.209,0.0
+NR-PPAR-gamma,Random Forest,0.753,0.021,0.339,0.012
+NR-PPAR-gamma,XGBoost,0.739,0.01,0.253,0.022
+SR-ARE,Logistic Regression,0.702,0.0,0.44,0.0
+SR-ARE,Random Forest,0.764,0.002,0.526,0.013
+SR-ARE,XGBoost,0.742,0.004,0.499,0.007
+SR-ATAD5,Logistic Regression,0.776,0.0,0.187,0.0
+SR-ATAD5,Random Forest,0.777,0.017,0.23,0.02
+SR-ATAD5,XGBoost,0.757,0.01,0.247,0.004
+SR-HSE,Logistic Regression,0.726,0.0,0.165,0.0
+SR-HSE,Random Forest,0.739,0.003,0.267,0.007
+SR-HSE,XGBoost,0.727,0.012,0.266,0.013
+SR-MMP,Logistic Regression,0.836,0.0,0.604,0.0
+SR-MMP,Random Forest,0.863,0.002,0.583,0.007
+SR-MMP,XGBoost,0.879,0.004,0.64,0.004
+SR-p53,Logistic Regression,0.73,0.0,0.249,0.0
+SR-p53,Random Forest,0.796,0.009,0.315,0.015
+SR-p53,XGBoost,0.806,0.007,0.361,0.001
