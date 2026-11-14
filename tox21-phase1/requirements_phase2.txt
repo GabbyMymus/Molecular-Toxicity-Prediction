@@ -1,0 +1,4 @@
+# Phase 2 additions (on top of the Phase 1 requirements.txt)
+torch
+torch_geometric
+scipy

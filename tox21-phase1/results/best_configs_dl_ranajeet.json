@@ -1,0 +1,14 @@
+{
+  "fpmlp|morgan": {
+    "hidden": 1024,
+    "dropout": 0.5,
+    "weight_decay": 0.0001,
+    "lr": 0.001
+  },
+  "fpmlp|both": {
+    "hidden": 512,
+    "dropout": 0.5,
+    "weight_decay": 1e-05,
+    "lr": 0.001
+  }
+}
