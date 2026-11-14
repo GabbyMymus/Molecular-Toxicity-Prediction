@@ -1,0 +1,9 @@
+{
+  "gcn|none": {
+    "hidden": 256,
+    "layers": 3,
+    "dropout": 0.2,
+    "weight_decay": 1e-05,
+    "lr": 0.001
+  }
+}
