@@ -1,0 +1,52 @@
+\section{Deep Learning Methods and Evaluation Protocol}
+\label{sec:methods_dl}
+
+\subsection{Evaluation Protocol}
+All Phase~2 models are evaluated on exactly the Phase~1 partitions, loaded from the same split files, so that deep models and the Phase~1 baselines are scored on identical molecules. Two splits are used: a Bemis--Murcko scaffold split~\cite{bemis1996properties} and a random split. Both are deterministic 80/10/10 partitions. The scaffold split places whole scaffold groups, largest first, against the 80/10/10 cutoffs, with acyclic molecules forming a single group. The 1,753 acyclic molecules share the empty scaffold and are all assigned to training, so scaffold validation and test contain only ring-containing molecules. The random split is a seeded permutation. The split files are fixed; the seeds $0$, $1$ and $2$ vary only the model initialization, the mini-batch order and the other training randomness, and every configuration is run once per seed on each split.
+
+Performance is measured by ROC~AUC and PR~AUC on each of the 12 Tox21 endpoints (NR-AR, NR-AR-LBD, NR-AhR, NR-Aromatase, NR-ER, NR-ER-LBD, NR-PPAR-gamma, SR-ARE, SR-ATAD5, SR-HSE, SR-MMP, SR-p53) using the Phase~1 masked metric. Molecules with an unmeasured label for an endpoint are excluded from that endpoint's metric, and an endpoint whose labeled rows contain only one class yields an undefined value rather than a score. Missing labels are never imputed. PR~AUC is computed as average precision.
+
+\paragraph{Training objective.}
+Graph and feature inputs are batched and the 12 endpoints are predicted jointly as 12 logits. The loss is a masked, class-weighted binary cross-entropy: each endpoint $j$ receives a positive-class weight $w_j = \min(n^{-}_j / n^{+}_j,\, 50)$ computed from the labeled training entries of that endpoint (with $n^{+}_j$ floored at one), and entries with missing labels contribute exactly zero. The summed loss is divided by the number of labeled entries in the batch. Models are optimized with AdamW~\cite{loshchilov2019adamw} with a mini-batch size of 64, gradient-norm clipping at 5, and a plateau scheduler that halves the learning rate on the mean validation PR~AUC with a patience of 5 epochs. Training stops early on the mean validation PR~AUC across endpoints, with a patience of 10 epochs and a maximum of 60 epochs; the weights from the epoch with the best validation PR~AUC are restored before any prediction is made.
+
+\subsection{Model Architectures}
+\paragraph{Node and edge inputs.}
+For the graph models each molecule is a graph whose nodes are atoms with a 33-dimensional feature vector (one-hot atom symbol, degree, number of attached hydrogens and hybridization, each with an ``other'' bin, plus clipped formal charge, aromaticity, ring membership and scaled atomic mass) and whose directed edges are bonds with a 6-dimensional feature vector (one-hot bond type, conjugation and ring membership).
+
+\paragraph{D0: FP-MLP.}
+A multilayer perceptron on a per-molecule feature vector alone, serving as the deep-learning control for the fingerprint and descriptor inputs. It has two hidden layers of width $h$ and $h/2$ with ReLU and dropout, followed by a linear layer to 12 logits. The code supports the Morgan bits (2,048 columns), the RDKit descriptors, or their concatenation; the final evaluations use the concatenation of the Morgan bits and the RDKit descriptors (2,261 inputs). The descriptors are the 217 raw RDKit descriptors after the Phase~1 preprocessing fitted on the training partition (median imputation, percentile clipping, removal of near-constant columns and standardization), which leaves 213 columns on both the scaffold and the random split.
+
+\paragraph{D1: GCN.}
+A graph convolutional network~\cite{kipf2017gcn} of $L$ \texttt{GCNConv} layers, each followed by batch normalization, ReLU and dropout, with a mean readout over atoms and a two-layer classification head. It uses the atom features only and ignores bond features.
+
+\paragraph{D2: MPNN.}
+A message passing neural network in the style of Gilmer et al.~\cite{gilmer2017neural}. Atom features are linearly embedded to $h$ dimensions. For $T$ steps with shared weights, messages are computed by an edge network (a two-layer perceptron mapping the bond features to an $h \times h$ matrix that multiplies the neighbor state, aggregated by the mean over neighbors), and node states are updated by a gated recurrent unit (GRU)~\cite{cho2014gru}. A Set2Set readout~\cite{vinyals2016set2set} with three processing steps pools the final node states into a $2h$-dimensional graph embedding, which passes through dropout and a two-layer head to 12 logits. An optional edge-dropout rate regularizes message passing during training.
+
+\paragraph{H1: MPNN with descriptors.}
+The D2 encoder with an additional branch for the per-molecule RDKit descriptor vector (213 standardized columns, as above): a linear layer to 128 units with ReLU and dropout, concatenated with the graph embedding before the classification head. No separate hyperparameter search is run for H1; the final run reads the \texttt{mpnn+desc} entry of the frozen configuration file if present and otherwise falls back to the entry for the descriptor-free MPNN, and the frozen file contains only the latter.
+
+\paragraph{H2: rank-average ensemble.}
+A late-fusion ensemble with no training and no tuning that combines the Phase~1 XGBoost test predictions with the test predictions of one deep model. The partner is selected on validation only: it is the deep model with the best mean peak validation PR~AUC over seeds 0--2, read from the per-epoch learning curves of the final runs on the scaffold split. For each endpoint the scores of each model are replaced by their ranks scaled to $(0, 1]$, and the two rank vectors are averaged with fixed weights $0.5/0.5$. The equal weights are set a priori; no weight is searched on validation or test data.
+
+\subsection{Hyperparameter Tuning Protocol}
+Each deep model family is given at most eight hyperparameter configurations. Every configuration is trained once, with seed 0, on the scaffold training partition and scored on the scaffold validation partition only; the test partition is never scored in tuning mode. The configuration with the highest mean validation PR~AUC across the 12 endpoints is selected. The FP-MLP is tuned separately for each of its feature sets. Only the \texttt{both} configuration of the FP-MLP is used in the final evaluations. The selected configurations (Table~\ref{tab:dl_configs}) are written to \texttt{results/best\_configs\_dl.json}. The same configuration is applied unchanged to the random split and to all three seeds.
+
+\begin{table}[t]
+\caption{Frozen deep-learning configurations selected on scaffold validation PR~AUC (seed 0). $h$: hidden width; depth: number of GCN layers ($L$) or message passing steps ($T$); WD: AdamW weight decay; LR: learning rate; ED: edge dropout.}
+\label{tab:dl_configs}
+\centering\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+Model & Features & $h$ & depth & dropout & WD / LR & ED \\
+\midrule
+GCN (D1)   & graph        & 256  & $L=3$ & 0.2 & $10^{-5}$ / $10^{-3}$ & -- \\
+MPNN (D2)  & graph        & 64   & $T=3$ & 0.2 & $10^{-5}$ / $10^{-3}$ & 0.0 \\
+FP-MLP (D0) & Morgan      & 1024 & --    & 0.5 & $10^{-4}$ / $10^{-3}$ & -- \\
+FP-MLP (D0) & Morgan + desc.\ & 512 & --  & 0.5 & $10^{-5}$ / $10^{-3}$ & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Test-Set Discipline}
+The configurations in Table~\ref{tab:dl_configs} were frozen in a dedicated git commit (\texttt{0aebd87}) before any test-set result file was committed to the repository. After the freeze, the test partition is read only by the final-evaluation mode, the ablation mode and the ensemble script, each of which requires an explicit command-line acknowledgment that it touches the test set; the final and ablation modes additionally refuse to run unless the frozen configuration file exists. No configuration is modified after the freeze.
