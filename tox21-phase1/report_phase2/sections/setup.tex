@@ -1,0 +1,23 @@
+\section{Experimental Setup}
+\label{sec:setup}
+
+This section records the execution environment and the reproduction procedure. The evaluation protocol, tuning budget and freeze discipline are specified in Section~\ref{sec:methods_dl} and are not repeated here.
+
+\paragraph{Software environment.}
+Python~3.13.3 with PyTorch~2.15.0 and PyTorch Geometric~2.8.1; RDKit, scikit-learn, XGBoost, pandas and SciPy are inherited from the Phase~1 environment. Dependencies are declared in \texttt{requirements.txt} (Phase~1) and \texttt{requirements\_phase2.txt}, which adds \texttt{torch}, \texttt{torch\_geometric} and \texttt{scipy}. All commands are run from the \texttt{tox21-phase1/} directory with the virtual environment active.
+
+\paragraph{Hardware.}
+The training entry point selects its device as CUDA when \texttt{torch.cuda.is\_available()} returns true and CPU otherwise; Apple-silicon MPS is not used. The repository does not record the device on which each committed result file was produced, so per-run hardware is not claimed here. The GCN, FP-MLP and ensemble workloads are inexpensive enough to run on a laptop CPU; the MPNN runs are the dominant cost, and the project README directs them to a free GPU session (Kaggle or Colab). Because GPU kernels are not bit-reproducible and runs were distributed across team machines, small numerical differences between a re-run and the committed numbers are expected; results reported in this paper are those in the committed CSV files.
+
+\paragraph{Seeds and repetitions.}
+Hyperparameter search uses seed~0 only. Every final and ablation run is repeated with seeds $0, 1, 2$ (\texttt{SEEDS} in \texttt{src/config.py}), and each seed controls Python, NumPy and Torch initialisation and data-loader shuffling. All figures and tables report the mean and the sample standard deviation over these three seeds. Differences smaller than roughly one seed standard deviation are not claimed as improvements.
+
+\paragraph{Optimisation and early stopping.}
+Unless a tuned configuration overrides them, runs use AdamW with learning rate $10^{-3}$, weight decay $10^{-5}$, batch size~64, and gradient-norm clipping at~5.0. The learning rate is halved when the mean validation PR~AUC has not improved for 5~epochs. Training is capped at 60~epochs and stops early once 10~epochs pass without an improvement in mean validation PR~AUC; the parameters of the best epoch are restored before any prediction is made. The per-epoch training loss and validation PR/ROC~AUC of every run are committed under \texttt{results/curves/}.
+
+Across the 24 committed final runs, early stopping was the binding criterion in 23 cases: runs lasted 22--60 epochs and selected their best epoch between 12 and 50. Per family, FP-MLP stopped after 24--41 epochs (best epoch 14--31), H1 (MPNN with descriptors) after 22--56 (best 12--46), the plain MPNN after 34--46 (best 24--36), and the GCN after 43--60 (best 33--50). The single run that reached the 60-epoch cap was the GCN on the random split with seed~0, so the budget was adequate for every model except marginally for the GCN.
+
+\paragraph{Reproduction.}
+The pipeline is driven by \texttt{make} targets documented in the README. In order: \texttt{make features} regenerates the untracked feature arrays, and \texttt{src.dl.run} rebuilds the untracked graph cache \texttt{data/processed/graphs.pt} automatically when it is absent or inconsistent with the cleaned CSV. \texttt{make dl-tune} performs the validation-only search; \texttt{make dl-final}, \texttt{make dl-ablate} and \texttt{make dl-ensemble} produce the test-set results, ablations and the H2 ensembles. The three test-set targets first invoke \texttt{make dl-guard}, which aborts unless the frozen configuration file exists, is tracked by git and is unmodified; \texttt{make dl-tune} conversely refuses to run once that file exists, because tuning mode would otherwise merge a new entry into it. \texttt{make phase2-test} runs the deep-learning smoke tests together with the graph- and descriptor-alignment tests.
+
+Scripts write result files under default names, which are renamed with an owner suffix before being committed; the ensemble script appends to a shared file, so its output is split per variant after each run. This convention keeps results from different machines mergeable without conflicts, and the analysis helpers concatenate every matching file.
