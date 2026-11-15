@@ -43,7 +43,7 @@ Because Tox21 provides only 12 assay endpoints, paired Wilcoxon signed-rank test
     \item \textbf{H2 vs.\ XGBoost alone:} H2 does not beat XGBoost on scaffold. The primary H2 wins on 4 endpoints and loses on 8 (mean difference $-0.0065$, $p = 0.5186$); the secondary variant wins on 5 and loses on 7 (mean difference $-0.0065$, $p = 0.6221$). Neither difference is statistically significant.
 \end{enumerate}
 
-A joint paired percentile bootstrap over test rows (1,000 resamples, per endpoint, using the seed-0 predictions only) gives, for H1 minus FP-MLP on \texttt{NR-Aromatase}, a mean difference of $+0.127$ with a 95\% interval of $[+0.047, +0.219]$; this is the only one of the 12 endpoints where the interval for H1 minus FP-MLP excludes zero. For the primary H2 minus H1 the interval lies above zero on 1 of 12 endpoints (secondary variant: 4 of 12), so the endpoint-level evidence is weaker than the pooled win counts suggest.
+A joint paired percentile bootstrap over test rows (1,000 resamples, per endpoint, using the seed-0 predictions only) gives, for H1 minus FP-MLP on \texttt{NR-Aromatase}, a mean difference of $+0.127$ with a 95\% interval of $[+0.047, +0.219]$; this is the only one of the 12 endpoints where the interval for H1 minus FP-MLP excludes zero. For the primary H2 minus H1 the interval lies above zero on 1 of 12 endpoints and below zero on \texttt{NR-Aromatase} (secondary variant: above zero on 4 of 12, below on none), so the endpoint-level evidence is weaker than the pooled win counts suggest. All intervals come from \texttt{results/dl\_bootstrap\_ci.csv}, written by \texttt{scripts/make\_bootstrap\_ci.py} from the committed seed-0 prediction files (fixed resampling seed 0).
 
 \begin{figure}[htbp]
 \centering
