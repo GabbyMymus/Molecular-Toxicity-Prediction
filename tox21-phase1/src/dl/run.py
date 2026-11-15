@@ -171,6 +171,7 @@ def main() -> None:
     ap.add_argument("--grid-limit", type=int, default=None, help="tune only the first N configs (time cap)")
     ap.add_argument("--shuffle-extra", action="store_true", help="control: permute descriptor/FP rows")
     ap.add_argument("--shuffle-labels", action="store_true", help="control: permute TRAIN labels")
+    ap.add_argument("--output-name", default="", help="ablation CSV basename under results/ (optional)")
     ap.add_argument("--i-know-this-touches-test", action="store_true")
     args = ap.parse_args()
 
@@ -206,7 +207,12 @@ def main() -> None:
         sys.exit("Freeze and commit results/best_configs_dl.json first, then pass --i-know-this-touches-test")
     best = json.loads(best_path.read_text())
     cfg = best.get(key) or best[f"{args.model}|none"]
-    out_path = RESULTS / ("dl_results_test.csv" if args.mode == "final" else "dl_ablation_test.csv")
+    if args.output_name:
+        if args.mode != "ablate" or Path(args.output_name).name != args.output_name:
+            sys.exit("--output-name is available only in ablate mode and must be a file basename")
+        out_path = RESULTS / args.output_name
+    else:
+        out_path = RESULTS / ("dl_results_test.csv" if args.mode == "final" else "dl_ablation_test.csv")
     variant = _parse_variant(args.variant)
     cfg = {**cfg, **variant}
     if args.max_epochs:

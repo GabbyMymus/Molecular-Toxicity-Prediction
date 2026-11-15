@@ -1,0 +1,25 @@
+\subsection{Similarity-stratified test analysis}
+To assess how chemical novelty relates to test performance, each scaffold-test molecule was assigned the maximum Morgan-fingerprint Tanimoto similarity to any scaffold-training molecule. Four empirical quantile bins were constructed from similarity alone before model labels or predictions were inspected. Duplicate quantile cut points were collapsed, keeping equal-similarity molecules together. Within each bin, ROC AUC and PR AUC were calculated separately for each endpoint using only observed labels. Endpoint scores were averaged within seed, then summarized across the three model seeds. No model or hyperparameter was selected using this analysis.
+
+The mean endpoint PR AUC is higher in the most similar bin than in the least similar bin for XGBoost (0.588 vs. 0.308), the graph MPNN (0.477 vs. 0.260), and H1 (MPNN with descriptors; 0.582 vs. 0.257). The pattern is not strictly monotonic: both XGBoost and the graph MPNN dip in the second bin. The comparison is descriptive and does not establish that similarity causes the performance difference. The four bins contain 191--195 molecules each, while the number of observed labels varies across endpoints.
+
+\input{tables/tanimoto_summary.tex}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{figures/tanimoto.pdf}
+    \caption{Mean endpoint PR AUC by maximum Morgan Tanimoto similarity to the scaffold training set. Error bars show sample SD across three model seeds.}
+    \label{fig:phase2-tanimoto}
+\end{figure}
+
+\subsection{Architecture ablations and shuffled-label control}
+All ablations use the frozen MPNN configuration in \texttt{results/best\_configs\_dl.json} (hidden size 64, three message-passing steps, dropout 0.2, learning rate $10^{-3}$, and weight decay $10^{-5}$) on the scaffold split with seeds 0--2. The predeclared comparisons change one property at a time: one step (A1), two steps (A2), bond features removed (A3), four steps, sum pooling, and mean pooling. The negative control permutes complete training-label rows across training molecules while leaving validation and test data unchanged; its mean test ROC AUC should be near 0.5, and a value above 0.55 warrants a leakage investigation.
+
+The run manifest and command generator are in \texttt{scripts/09\_run\_malhar\_ablations.py}. Ablation metrics are not reported here because this workspace does not have PyTorch or PyTorch Geometric installed and cannot reach the package index. The script writes results to \texttt{results/dl\_ablation\_test\_malhar.csv} once run in the Phase 2 environment; the result cells must be filled from that output before this section is treated as final.
+
+\subsection{Prediction alignment and seed variability}
+The saved probability arrays were checked against their split's test-label order and corresponding result CSVs. Every available file had shape $771\times12$, contained finite probabilities in $[0,1]$, and reproduced all per-endpoint label counts, ROC AUCs, and PR AUCs within $2\times10^{-6}$. The audit covers XGBoost and graph MPNN on both splits and H1 on the scaffold split. Seed variability is calculated after averaging over endpoints, so it reflects model randomness on one fixed split rather than split-to-split uncertainty.
+
+\input{tables/member5_seed_variance.tex}
+
+The H1 predictions and result rows were copied from the team branch \texttt{ranajeet/phase2} at commit \texttt{c10339827b7f509c42ed0d9f62d0f570a0b520d1}. The imported files are listed in \texttt{results/h1\_artifact\_provenance.json}; prediction counts and metrics were independently checked against that result CSV.

@@ -1,8 +1,6 @@
-# Tox21 Phase 1: molecular toxicity prediction
+# Tox21 Molecular Toxicity Prediction
 
-This project builds reproducible classical machine learning baselines for predicting activity across the 12 Tox21 toxicity assays. It compares Logistic Regression, Random Forest, and XGBoost using Morgan fingerprints alone and fingerprints combined with RDKit molecular descriptors. It evaluates both random and Bemis–Murcko scaffold splits.
-
-> **Scope:** This repository contains Phase 1 only. The graph neural network is planned for Phase 2; `phase2/` is a placeholder.
+This repository contains the Phase 1 classical baselines and the Phase 2 deep-learning follow-on for predicting activity across the 12 Tox21 toxicity assays. Phase 1 compares Logistic Regression, Random Forest, and XGBoost using Morgan fingerprints and RDKit descriptors. Phase 2 adds graph neural networks and fingerprint MLPs under the same missing-label and split contracts.
 
 ## Results at a glance
 
@@ -88,6 +86,34 @@ Configurations selected on scaffold validation are reused unchanged for the rand
 
 For parallel tuning or final evaluation, see the examples in [`scripts/03_tune.py`](scripts/03_tune.py) and [`scripts/04_final_test.py`](scripts/04_final_test.py). The scripts use file locks for shared result files; use separate output files for parallel final-test runs and merge them with `scripts/merge_results.py`.
 
+## Phase 2: deep learning
+
+Phase 2 adds graph construction, MPNN and GCN architectures, fingerprint MLPs, masked multi-task training, and a frozen-config test runner under `src/dl/`. The Phase 2 code uses the same saved scaffold and random test indices and preserves missing labels as `NaN`.
+
+Install the additional dependencies after the Phase 1 setup:
+
+```bash
+python -m pip install -r requirements_phase2.txt
+```
+
+The frozen graph MPNN results and configs are already committed. For Malhar's Phase 2 analysis and QA, run:
+
+```bash
+python scripts/07_tanimoto_analysis.py
+python scripts/08_member5_validation.py --splits scaffold,random
+```
+
+The Tanimoto analysis compares frozen XGBoost, graph MPNN, and H1 (MPNN + descriptors) predictions across similarity quantiles on the scaffold test set. It writes the figure, CSV tables, and a LaTeX table to `report_phase2/`. The validation script checks prediction dimensions, ranges, endpoint counts, and metric agreement against the saved result CSVs; it also records model-seed variation.
+
+Run the architecture ablations and shuffled-label negative control with:
+
+```bash
+python scripts/09_run_malhar_ablations.py --dry-run
+python scripts/09_run_malhar_ablations.py
+```
+
+These test-set runs must use the frozen config and require PyTorch and PyTorch Geometric. They write `results/dl_ablation_test_malhar.csv`; do not report outcomes until that file has been generated. See [`report_phase2/README.md`](report_phase2/README.md) for the report handoff and reproducibility details.
+
 ## Repository map
 
 | Path | Contents |
@@ -96,12 +122,14 @@ For parallel tuning or final evaluation, see the examples in [`scripts/03_tune.p
 | `src/features.py` | Morgan and descriptor generation, train-only descriptor preprocessing, feature loading. |
 | `src/models/` | Model factories, hyperparameter grids, and model registry. |
 | `src/evaluate.py` | Masked metrics, endpoint training, validation tuning, and final scoring. |
+| `src/dl/` | Graph featurization, GCN/MPNN/FP-MLP models, training, ensemble, and Phase 2 analysis. |
 | `src/similarity.py` | Maximum Morgan Tanimoto similarity to the training set. |
-| `scripts/` | Data, feature, tuning, evaluation, EDA, figure, and result-merge entry points. |
+| `scripts/` | Data, feature, tuning, evaluation, EDA, figure, result-merge, and Phase 2 QA entry points. |
 | `data/processed/`, `data/splits/` | Committed cleaned data, deduplication audit, and split indices. |
 | `features/` | Generated local feature arrays and committed manifest. |
 | `results/`, `tables/`, `figures/` | Tuning and test results, predictions, paper tables, and plots. |
 | `report/`, `slides/` | LaTeX report, presentation source, and generated deck. |
+| `report_phase2/` | Phase 2 report fragments, Tanimoto analysis tables, and figure. |
 | `tests/` | Unit, script, and smoke tests. |
 
 See [`CONTRACT.md`](CONTRACT.md) for binding rules about endpoint order, row alignment, missing labels, feature processing, tuning, and test-set use.
@@ -127,4 +155,4 @@ Key limitations to state alongside the results:
 | Ranajeet | Morgan fingerprints, RDKit descriptors, leak-free preprocessing, Random Forest. |
 | Parrv | Repository structure and contract, evaluation harness, XGBoost, tuning and final-test scripts, reproducibility. |
 | Abhijeet | Literature review, theory, results analysis, Tanimoto study, report and slides. |
-| Malhar (Member 5) | README and slide polish, tests and QA communication, viva preparation. The committed QA report documents the smoke test and final-result reproduction; the viva drill remains unrun. |
+| Malhar (Member 5) | Phase 2 prediction alignment and seed-variance QA, Tanimoto-bin comparison, predeclared MPNN ablations and shuffled-label control, clean-clone verification, and report handoff. |
