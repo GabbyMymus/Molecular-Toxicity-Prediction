@@ -2,7 +2,7 @@
 
 This project builds reproducible classical machine learning baselines for predicting activity across the 12 Tox21 toxicity assays. It compares Logistic Regression, Random Forest, and XGBoost using Morgan fingerprints alone and fingerprints combined with RDKit molecular descriptors. It evaluates both random and Bemis–Murcko scaffold splits.
 
-> **Scope:** This repository contains Phase 1 only. The graph neural network is planned for Phase 2; `phase2/` is a placeholder.
+> **Scope:** This repository contains Phase 1 (classical baselines) and Phase 2 (deep learning in `src/dl/`; see [Phase 2: deep learning](#phase-2-deep-learning)). The results and tables in the Phase 1 sections below are Phase 1 only. `phase2/` is a placeholder directory.
 
 ## Results at a glance
 
@@ -87,6 +87,82 @@ This saves the source file under `data/raw/`. `make data` and `make all` do not 
 Configurations selected on scaffold validation are reused unchanged for the random split. Do not use test results to select hyperparameters.
 
 For parallel tuning or final evaluation, see the examples in [`scripts/03_tune.py`](scripts/03_tune.py) and [`scripts/04_final_test.py`](scripts/04_final_test.py). The scripts use file locks for shared result files; use separate output files for parallel final-test runs and merge them with `scripts/merge_results.py`.
+
+## Phase 2: deep learning
+
+Phase 2 adds deep models on the same Phase 1 data, splits, seeds (0, 1, 2) and masked ROC AUC / PR AUC metrics. The code is in `src/dl/`.
+
+| ID | Model |
+|---|---|
+| D0 | FP-MLP: a multilayer perceptron on Morgan bits and/or RDKit descriptors. |
+| D1 | GCN on molecular graphs (atom features only). |
+| D2 | MPNN: edge-network messages, GRU update, Set2Set readout. |
+| H1 | MPNN with the RDKit descriptor vector added before the classification head. |
+| H2 | Rank-average ensemble (weights 0.5 / 0.5, no training) of the Phase 1 XGBoost predictions (morgan+desc) and the deep model with the best validation PR AUC (`fpmlp+both`); a secondary variant pairs XGBoost with H1. |
+
+### Phase 2 setup
+
+Run commands from `tox21-phase1/` with the virtual environment active.
+
+```bash
+pip install -r requirements.txt -r requirements_phase2.txt
+```
+
+`make setup` installs `requirements.txt` only. `requirements_phase2.txt` adds `torch`, `torch_geometric` and `scipy`.
+
+The feature arrays `features/morgan_2048.npy` and `features/descriptors_raw.npy` are not tracked by Git (`features/*.npy` is ignored). Regenerate them with the Phase 1 command:
+
+```bash
+make features
+```
+
+The graph cache `data/processed/graphs.pt` is also ignored by Git. `src.dl.run` rebuilds it from the cleaned CSV when it is missing or no longer matches.
+
+### Phase 2 run order
+
+| Step | Command | Reads test split? |
+|---|---|---|
+| 1. Tune | `make dl-tune` | No (validation only, seed 0, scaffold split, at most 8 configs per model) |
+| 2. Freeze | Commit `results/best_configs_dl.json` with a commit message that starts with `FREEZE` | No |
+| 3. Final | `make dl-final` | Yes |
+| 4. Ablate | `make dl-ablate` | Yes |
+| 5. Ensemble | `make dl-ensemble` | Yes |
+
+`dl-final`, `dl-ablate` and `dl-ensemble` first run `dl-guard`, which stops unless `results/best_configs_dl.json` exists, is committed, and is unchanged, and then prints that the configs are frozen. `dl-tune` refuses to run once `results/best_configs_dl.json` exists, because `src.dl.run --mode tune` merges its result into that file. MPNN tuning and finals are slow on a CPU; use a GPU (Kaggle or Colab).
+
+### Freeze rule
+
+The deep-learning configurations were frozen in commit `0aebd87` ("FREEZE: DL configs frozen before any test evaluation"), which adds `results/best_configs_dl.json`. Do not edit that file afterwards and do not use test results to choose hyperparameters. The test split is read only by `--mode final`, `--mode ablate` and `src/dl/ensemble.py`; each needs `--i-know-this-touches-test`, and `--mode final` and `--mode ablate` also exit unless `results/best_configs_dl.json` exists.
+
+### Phase 2 result files
+
+Files are written by `src.dl.run` / `src.dl.ensemble` under default names (`dl_tuning_val.csv`, `best_configs_dl.json`, `dl_results_test.csv`, `dl_ablation_test.csv`) and were renamed with an owner suffix when committed. Ensemble runs (`make dl-ensemble`) append to `results/dl_results_test.csv`, so after each run rename or split that file into the per-owner results file, as was done for `dl_results_test_ranajeet_h2.csv` and `dl_results_test_ranajeet_h2_alt_mpnndesc.csv`.
+
+| File in `results/` | Owner | Contents |
+|---|---|---|
+| `dl_tuning_val_parrv.csv` | Parrv | MPNN tuning, validation metrics per config and endpoint (scaffold split, seed 0). |
+| `dl_tuning_val_parrv_gcn.csv` | Parrv | GCN tuning, same layout. |
+| `best_configs_dl_parrv.json`, `best_configs_dl_parrv_gcn.json` | Parrv | Selected configs for `mpnn\|none` and `gcn\|none`. |
+| `best_configs_dl_ranajeet.json` | Ranajeet | Selected configs for `fpmlp\|morgan` and `fpmlp\|both`. |
+| `best_configs_dl.json` | Parrv | The merged, frozen configs (commit `0aebd87`). |
+| `dl_results_test_parrv_mpnn.csv` | Parrv | D2 MPNN test metrics per endpoint, split and seed. |
+| `dl_results_test_raghav.csv` | Raghav | D1 GCN test metrics. |
+| `dl_results_test_ranajeet_fpmlp.csv` | Ranajeet | D0 FP-MLP (`fpmlp+both`) test metrics. |
+| `dl_results_test_ranajeet_h1.csv` | Ranajeet | H1 (`mpnn+desc`) test metrics. |
+| `dl_results_test_ranajeet_h2.csv` | Ranajeet | H2 ensemble (`ens_xgb_fpmlp+both`) test metrics. |
+| `dl_results_test_ranajeet_h2_alt_mpnndesc.csv` | Ranajeet | Secondary H2 variant (`ens_xgb_mpnn+desc`) test metrics. |
+| `dl_ablation_test_raghav.csv` | Raghav | MPNN regularization ablations (`dropedge`, `no_class_weight`, `no_dropout`, `no_mask`, `no_wd`), scaffold split. |
+| `dl_ablation_test_ranajeet.csv` | Ranajeet | MPNN feature ablations (`morgan`, `both`, `shuffled_desc`), scaffold split. |
+| `preds/` | Written by each run | Test-set probability arrays (tracked in git). Phase 2 files are named `{model}_{feature_set}_{split}_seed{k}_{tag}.npy` (`tag` is `final` for finals). |
+| `curves/` | Written by each run | Per-epoch training loss and validation PR AUC / ROC AUC as JSON, same naming (tracked in git). |
+
+### Phase 2 tests
+
+```bash
+make phase2-test
+```
+
+This runs `tests/test_dl_smoke.py`, `tests/test_gate0_ranajeet.py`, `tests/test_graph_alignment.py` and `tests/test_extra_alignment.py`. `make test` runs the whole suite.
 
 ## Repository map
 
