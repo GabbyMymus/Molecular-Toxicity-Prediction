@@ -24,14 +24,14 @@ Table~\ref{tab:main_results} and Figure~\ref{fig:mean_scaffold} summarize test p
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{figures/per_endpoint_heatmap_comparison.pdf}
-\caption{Per-endpoint PR~AUC heatmap across all 12 Tox21 assays on the scaffold test partition (averaged across 3 seeds).}
+\caption{Per-endpoint PR~AUC on the scaffold test partition, averaged over seeds 0--2, for the 10 rows of Table~\ref{tab:main_results} other than the two Phase~1 logistic-regression rows.}
 \label{fig:heatmap}
 \end{figure}
 
 \subsection{Per-Endpoint Performance and Assay Heterogeneity}
 Figure~\ref{fig:heatmap} breaks down PR~AUC across all 12 individual assay endpoints. Performance exhibits substantial biological heterogeneity across pathways:
 \begin{itemize}
-    \item Averaged over the models in Table~\ref{tab:main_results}, scaffold PR~AUC is highest on \texttt{SR-MMP} ($0.567$) and \texttt{NR-AhR} ($0.514$), and lowest on \texttt{SR-HSE} ($0.206$), \texttt{SR-ATAD5} ($0.224$) and \texttt{NR-PPAR-gamma} ($0.268$). Across the 12 rows of the table the PR~AUC ranges are $0.437$--$0.596$ for \texttt{NR-AhR}, $0.374$--$0.464$ for \texttt{NR-AR}, $0.472$--$0.640$ for \texttt{SR-MMP} and $0.149$--$0.267$ for \texttt{SR-HSE}.
+    \item Averaged over the 10 models shown in Figure~\ref{fig:heatmap} (unweighted), scaffold PR~AUC is highest on \texttt{SR-MMP} ($0.567$) and \texttt{NR-AhR} ($0.529$), and lowest on \texttt{SR-HSE} ($0.213$), \texttt{SR-ATAD5} ($0.230$) and \texttt{NR-PPAR-gamma} ($0.268$). Across these 10 rows the PR~AUC ranges are $0.459$--$0.596$ for \texttt{NR-AhR}, $0.397$--$0.464$ for \texttt{NR-AR}, $0.472$--$0.640$ for \texttt{SR-MMP} and $0.149$--$0.267$ for \texttt{SR-HSE}.
     \item The largest endpoint-level gains of H1 over the FP-MLP control are on \texttt{NR-Aromatase} ($+0.0980$), \texttt{SR-HSE} ($+0.0370$) and \texttt{SR-ARE} ($+0.0281$), seed-averaged PR~AUC differences.
 \end{itemize}
 

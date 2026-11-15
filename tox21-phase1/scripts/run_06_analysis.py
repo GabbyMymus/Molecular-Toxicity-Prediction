@@ -85,81 +85,23 @@ print(abl_table)
 # ----------------- PLOTTING FIGURES -----------------
 sns.set_theme(style="whitegrid", font_scale=1.05)
 
-# FIGURE 1: Mean PR & ROC AUC Bar Chart
-print("\nPlotting Figure 1: mean_pr_roc_scaffold...")
+# FIGURES 1 and 2 (mean_pr_roc_scaffold, per_endpoint_heatmap_comparison) are produced by
+# scripts/make_mean_figure.py and scripts/make_heatmap_figure.py, not by this script.
+
 display_names = {
     ("rf", "morgan+desc"): "RF (Morgan+Desc)",
     ("xgb", "morgan+desc"): "XGBoost (Morgan+Desc)",
-    ("ens_xgb_mpnn+desc", "morgan+desc+graph+desc"): "H2: Ensemble (XGB+H1)",
+    ("ens_xgb_mpnn+desc", "morgan+desc+graph+desc"): "H2 alt. Ensemble (XGB+H1)",
     ("mpnn+desc", "graph+desc"): "H1: MPNN + Descriptors",
     ("fpmlp+both", "both"): "FP-MLP Control",
     ("rf", "morgan"): "RF (Morgan)",
     ("xgb", "morgan"): "XGBoost (Morgan)",
     ("logreg", "morgan+desc"): "LogReg (Morgan+Desc)",
     ("logreg", "morgan"): "LogReg (Morgan)",
+    ("gcn", "graph"): "D1: GCN",
+    ("mpnn", "graph"): "D2: MPNN",
+    ("ens_xgb_fpmlp+both", "morgan+desc+both"): "H2: Ensemble (XGB+FP-MLP)",
 }
-
-summary_scaff = scaffold_summary.copy()
-summary_scaff["display_name"] = [display_names.get(idx, f"{idx[0]}_{idx[1]}") for idx in summary_scaff.index]
-
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.2))
-summary_scaff_pr = summary_scaff.sort_values("pr_auc_mean", ascending=True)
-colors_pr = ["#3274A1" if "H1" in n or "H2" in n or "FP-MLP" in n else "#55A868" for n in summary_scaff_pr["display_name"]]
-ax1.barh(summary_scaff_pr["display_name"], summary_scaff_pr["pr_auc_mean"], xerr=summary_scaff_pr["pr_auc_std"],
-         color=colors_pr, alpha=0.9, capsize=4, edgecolor="black", linewidth=0.8)
-ax1.set_xlabel("Mean PR AUC ± Seed Std")
-ax1.set_title("Scaffold Test PR AUC (Primary Precision Metric)", pad=10, fontweight="bold")
-ax1.set_xlim(0.25, 0.45)
-ax1.grid(axis="x", linestyle="--", alpha=0.5)
-
-summary_scaff_roc = summary_scaff.sort_values("roc_auc_mean", ascending=True)
-colors_roc = ["#3274A1" if "H1" in n or "H2" in n or "FP-MLP" in n else "#55A868" for n in summary_scaff_roc["display_name"]]
-ax2.barh(summary_scaff_roc["display_name"], summary_scaff_roc["roc_auc_mean"], xerr=summary_scaff_roc["roc_auc_std"],
-         color=colors_roc, alpha=0.9, capsize=4, edgecolor="black", linewidth=0.8)
-ax2.set_xlabel("Mean ROC AUC ± Seed Std")
-ax2.set_title("Scaffold Test ROC AUC", pad=10, fontweight="bold")
-ax2.set_xlim(0.65, 0.82)
-ax2.grid(axis="x", linestyle="--", alpha=0.5)
-
-plt.tight_layout()
-fig.savefig(fig_dir / "mean_pr_roc_scaffold.pdf")
-fig.savefig(fig_dir / "mean_pr_roc_scaffold.png", dpi=300)
-plt.close(fig)
-print("Saved mean_pr_roc_scaffold to", fig_dir)
-
-# FIGURE 2: Per-Endpoint PR AUC Heatmap
-print("Plotting Figure 2: per_endpoint_heatmap_comparison...")
-scaffold_df = df[df["split"] == "scaffold"].copy()
-scaffold_means = scaffold_df.groupby(["model", "feature_set", "endpoint"])["pr_auc"].mean().reset_index()
-
-target_models = [
-    ("xgb", "morgan+desc", "XGBoost (Morgan+Desc)"),
-    ("rf", "morgan+desc", "RF (Morgan+Desc)"),
-    ("fpmlp+both", "both", "FP-MLP Control"),
-    ("mpnn+desc", "graph+desc", "H1 (MPNN+Desc)"),
-    ("ens_xgb_mpnn+desc", "morgan+desc+graph+desc", "H2 (Ensemble)"),
-]
-
-heatmap_rows = []
-for m, fs, label in target_models:
-    sub = scaffold_means[(scaffold_means["model"] == m) & (scaffold_means["feature_set"] == fs)]
-    ep_map = dict(zip(sub["endpoint"], sub["pr_auc"]))
-    ep_map["Model"] = label
-    heatmap_rows.append(ep_map)
-
-hm_df = pd.DataFrame(heatmap_rows).set_index("Model")[ENDPOINTS]
-
-fig, ax = plt.subplots(figsize=(13, 5))
-sns.heatmap(hm_df, annot=True, fmt=".3f", cmap="YlGnBu", cbar_kws={"label": "Scaffold Test PR AUC"}, linewidths=0.5, ax=ax)
-ax.set_title("Per-Endpoint PR AUC across Tox21 Assays (Scaffold Split, 3-Seed Average)", pad=12, fontweight="bold")
-ax.set_xlabel("Assay Endpoint")
-ax.set_ylabel("")
-plt.xticks(rotation=35, ha="right")
-plt.tight_layout()
-fig.savefig(fig_dir / "per_endpoint_heatmap_comparison.pdf")
-fig.savefig(fig_dir / "per_endpoint_heatmap_comparison.png", dpi=300)
-plt.close(fig)
-print("Saved per_endpoint_heatmap_comparison to", fig_dir)
 
 # FIGURE 3: Generalization Gap
 print("Plotting Figure 3: generalization_gap...")
@@ -197,7 +139,8 @@ labels = [
     "Ablation A6b\n(Morgan: Graph+FP)",
     "Ablation A6a: Control\n(Shuffled Descriptors)"
 ]
-scores = abl_table["pr_auc"].tolist()
+# the ablation CSVs now hold many tags; the figure shows only these four, in this order
+scores = abl_table.set_index("tag").loc[["reference", "both", "morgan", "shuffled_desc"], "pr_auc"].tolist()
 colors = ["#2CA02C", "#1F77B4", "#FF7F0E", "#D62728"]
 
 bars = ax.bar(labels, scores, color=colors, alpha=0.88, edgecolor="black", linewidth=1.0, width=0.52)
