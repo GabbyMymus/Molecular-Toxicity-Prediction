@@ -1,0 +1,23 @@
+\begin{table*}[t]
+\centering
+\caption{Scaffold-test performance by maximum Tanimoto similarity to the training set. PR AUC is averaged across endpoints within seed; uncertainty is the sample SD across three model seeds.}
+\label{tab:tanimoto-binned}
+\begin{tabular}{llrrr}
+\toprule
+Model & Similarity quantile & Molecules & Mean PR AUC & Seed SD \\
+\midrule
+XGBoost & Q1 [0.143, 0.308] & 195 & 0.308 & 0.015 \\
+XGBoost & Q2 [0.308, 0.396] & 191 & 0.266 & 0.005 \\
+XGBoost & Q3 [0.396, 0.524] & 192 & 0.467 & 0.008 \\
+XGBoost & Q4 [0.524, 1.000] & 193 & 0.588 & 0.006 \\
+MPNN & Q1 [0.143, 0.308] & 195 & 0.260 & 0.046 \\
+MPNN & Q2 [0.308, 0.396] & 191 & 0.215 & 0.023 \\
+MPNN & Q3 [0.396, 0.524] & 192 & 0.383 & 0.015 \\
+MPNN & Q4 [0.524, 1.000] & 193 & 0.477 & 0.040 \\
+H1 (MPNN + desc.) & Q1 [0.143, 0.308] & 195 & 0.257 & 0.011 \\
+H1 (MPNN + desc.) & Q2 [0.308, 0.396] & 191 & 0.269 & 0.013 \\
+H1 (MPNN + desc.) & Q3 [0.396, 0.524] & 192 & 0.426 & 0.019 \\
+H1 (MPNN + desc.) & Q4 [0.524, 1.000] & 193 & 0.582 & 0.031 \\
+\bottomrule
+\end{tabular}
+\end{table*}
