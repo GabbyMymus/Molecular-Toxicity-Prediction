@@ -1,0 +1,15 @@
+{
+  "repository": "GabbyMymus/Molecular-Toxicity-Prediction",
+  "source_branch": "ranajeet/phase2",
+  "source_commit": "c10339827b7f509c42ed0d9f62d0f570a0b520d1",
+  "source_commit_message": "fix(H2): select DL partner by validation PR AUC -> FP-MLP, rerun ensemble",
+  "purpose": "H1 scaffold-test predictions for the predeclared Tanimoto-bin comparison",
+  "verified_against": "results/dl_results_test_ranajeet_h1.csv",
+  "files": {
+    "results/dl_results_test_ranajeet_h1.csv": "d4516fbd0be319a48d87781ba567393b509480c6",
+    "results/preds/mpnn+desc_graph+desc_scaffold_seed0_final.npy": "bee854d6b54e0a9afcff774291cacd19cf3a7885",
+    "results/preds/mpnn+desc_graph+desc_scaffold_seed1_final.npy": "3c3f62492bfd30a7d9bc440575e9765bb31bbeff",
+    "results/preds/mpnn+desc_graph+desc_scaffold_seed2_final.npy": "cfc3aaf5b0a720c6dfec1c89bcf8086a40b69a9c"
+  },
+  "validation": "Git blob hashes match the source commit; prediction-derived metrics and labeled counts match the imported H1 result rows for all 12 endpoints and all three scaffold seeds."
+}

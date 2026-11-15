@@ -1,8 +1,8 @@
-# Tox21 Phase 1: molecular toxicity prediction
+# Tox21 Molecular Toxicity Prediction
 
 This project builds reproducible classical machine learning baselines for predicting activity across the 12 Tox21 toxicity assays. It compares Logistic Regression, Random Forest, and XGBoost using Morgan fingerprints alone and fingerprints combined with RDKit molecular descriptors. It evaluates both random and Bemis–Murcko scaffold splits.
 
-> **Scope:** This repository contains Phase 1 (classical baselines) and Phase 2 (deep learning in `src/dl/`; see [Phase 2: deep learning](#phase-2-deep-learning)). The results and tables in the Phase 1 sections below are Phase 1 only. `phase2/` is a placeholder directory.
+> **Scope:** This repository contains Phase 1 (classical baselines) and Phase 2 (deep learning in `src/dl/`; see [Phase 2: deep learning](#phase-2-deep-learning)). The results and tables in the Phase 1 sections below are Phase 1 only.
 
 ## Results at a glance
 
@@ -153,8 +153,22 @@ Files are written by `src.dl.run` / `src.dl.ensemble` under default names (`dl_t
 | `dl_results_test_ranajeet_h2_alt_mpnndesc.csv` | Ranajeet | Secondary H2 variant (`ens_xgb_mpnn+desc`) test metrics. |
 | `dl_ablation_test_raghav.csv` | Raghav | MPNN regularization ablations (`dropedge`, `no_class_weight`, `no_dropout`, `no_mask`, `no_wd`), scaffold split. |
 | `dl_ablation_test_ranajeet.csv` | Ranajeet | MPNN feature ablations (`morgan`, `both`, `shuffled_desc`), scaffold split. |
+| `dl_ablation_test_malhar.csv` | Malhar | MPNN architecture ablations and shuffled-label control (scaffold split, seeds 0–2). |
 | `preds/` | Written by each run | Test-set probability arrays (tracked in git). Phase 2 files are named `{model}_{feature_set}_{split}_seed{k}_{tag}.npy` (`tag` is `final` for finals). |
 | `curves/` | Written by each run | Per-epoch training loss and validation PR AUC / ROC AUC as JSON, same naming (tracked in git). |
+
+### Malhar's analysis and validation
+
+Malhar's Phase 2 work covers similarity-stratified evaluation, prediction alignment and seed variability, and the predeclared MPNN architecture ablations. From `tox21-phase1/`, run:
+
+```bash
+python scripts/07_tanimoto_analysis.py
+python scripts/08_member5_validation.py --splits scaffold,random
+python scripts/09_run_malhar_ablations.py --dry-run
+python scripts/09_run_malhar_ablations.py
+```
+
+Run the ablations on a GPU after installing `requirements.txt` and `requirements_phase2.txt`. They write `results/dl_ablation_test_malhar.csv`; use that CSV as the source for reported ablation metrics. The prediction alignment and provenance audit is in `results/member5_prediction_audit.csv`, and the Phase 2 QA handoff is in `docs/phase2_member5_qa.md`.
 
 ### Phase 2 tests
 
@@ -184,7 +198,7 @@ See [`CONTRACT.md`](CONTRACT.md) for binding rules about endpoint order, row ali
 
 ## QA and known limitations
 
-The QA record is in [`docs/qa_report.md`](docs/qa_report.md), and [`docs/viva_drill.md`](docs/viva_drill.md) maps presentation questions to evidence in the repository. The QA report documents a passing 200-molecule smoke test and reproduction of the committed 432-row final results. It also reports that notebooks `02_features.ipynb` and `03_analysis.ipynb` ran cleanly, while `01_eda.ipynb` fails as committed because it uses a Google Colab path. A portable-path fix is proposed in the QA report but has not been applied there.
+The Phase 1 QA record is in [`docs/qa_report.md`](docs/qa_report.md), and [`docs/viva_drill.md`](docs/viva_drill.md) maps presentation questions to evidence in the repository. Phase 2's Member 5 checks and report handoff are in [`docs/phase2_member5_qa.md`](docs/phase2_member5_qa.md). The Phase 1 QA report documents a passing 200-molecule smoke test and reproduction of the committed 432-row final results. It also reports that notebooks `02_features.ipynb` and `03_analysis.ipynb` ran cleanly, while `01_eda.ipynb` fails as committed because it uses a Google Colab path. A portable-path fix is proposed in the QA report but has not been applied there.
 
 Key limitations to state alongside the results:
 
@@ -203,4 +217,4 @@ Key limitations to state alongside the results:
 | Ranajeet | Morgan fingerprints, RDKit descriptors, leak-free preprocessing, Random Forest. |
 | Parrv | Repository structure and contract, evaluation harness, XGBoost, tuning and final-test scripts, reproducibility. |
 | Abhijeet | Literature review, theory, results analysis, Tanimoto study, report and slides. |
-| Malhar (Member 5) | README and slide polish, tests and QA communication, viva preparation. The committed QA report documents the smoke test and final-result reproduction; the viva drill remains unrun. |
+| Malhar (Member 5) | Prediction alignment and seed-variance QA, Tanimoto-bin analysis, predeclared MPNN ablations and shuffled-label control, clean-clone verification, README and slide polish, and report handoff. |

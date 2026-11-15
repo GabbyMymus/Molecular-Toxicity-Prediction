@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\caption{Test-set performance and model-seed variability. Values are endpoint means with sample SD across the three model seeds.}
+\label{tab:member5-seed-variance}
+\begin{tabular}{llrr}
+\hline
+Model & Split & ROC AUC & PR AUC \\
+\hline
+MPNN (graph) & random & 0.815 $\pm$ 0.015 & 0.439 $\pm$ 0.041 \\
+XGBoost (Morgan + descriptors) & random & 0.862 $\pm$ 0.002 & 0.565 $\pm$ 0.002 \\
+MPNN (graph) & scaffold & 0.729 $\pm$ 0.014 & 0.307 $\pm$ 0.018 \\
+H1 (MPNN + descriptors) & scaffold & 0.738 $\pm$ 0.007 & 0.355 $\pm$ 0.006 \\
+XGBoost (Morgan + descriptors) & scaffold & 0.761 $\pm$ 0.004 & 0.401 $\pm$ 0.005 \\
+\hline
+\end{tabular}
+\end{table}
