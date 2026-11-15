@@ -181,6 +181,7 @@ def run_tanimoto_analysis(
     if split != "scaffold":
         raise ValueError("Tanimoto bins are defined against the scaffold train/test split")
     results_dir = Path(results_dir)
+    seeds = tuple(int(seed) for seed in seeds)
     output_dir = Path(output_dir) if output_dir else results_dir.parent / "report_phase2"
     y_true, similarity = load_scaffold_similarity(seed=0)
     raw_frames: list[pd.DataFrame] = []

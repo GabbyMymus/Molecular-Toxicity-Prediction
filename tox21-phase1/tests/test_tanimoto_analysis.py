@@ -1,6 +1,7 @@
 """Tests for similarity bins and masked metric aggregation (no DL dependencies)."""
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from src.config import ENDPOINTS
@@ -40,7 +41,7 @@ def test_endpoint_bin_metrics_masks_missing_labels_and_averages_seeds():
         endpoint_bin_metrics(y, p, sims, model="test", split="scaffold", seed=seed, n_bins=2)
         for seed in (0, 1)
     ]
-    raw = __import__("pandas").concat(frames, ignore_index=True)
+    raw = pd.concat(frames, ignore_index=True)
     summary = summarize_bin_metrics(raw)
     assert len(raw) == 2 * 2 * len(ENDPOINTS)
     assert summary["n_seeds_pr_auc"].eq(2).all()

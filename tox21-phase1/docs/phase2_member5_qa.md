@@ -23,4 +23,4 @@
 
 ## Preserved local work
 
-The 12 pre-existing modified Phase 1 Random Forest prediction arrays were left unstaged and uncommitted. All three new commits contain only Phase 2 analysis, tests, documentation, and H1 artifacts listed in their commit summaries.
+The 12 pre-existing modified Phase 1 Random Forest prediction arrays were left unstaged and uncommitted. The task commits contain only Phase 2 analysis, tests, documentation, and H1 artifacts listed in their commit summaries.
