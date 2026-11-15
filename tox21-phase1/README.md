@@ -136,7 +136,7 @@ See [`CONTRACT.md`](CONTRACT.md) for binding rules about endpoint order, row ali
 
 ## QA and known limitations
 
-The QA record is in [`docs/qa_report.md`](docs/qa_report.md), and [`docs/viva_drill.md`](docs/viva_drill.md) maps presentation questions to evidence in the repository. The QA report documents a passing 200-molecule smoke test and reproduction of the committed 432-row final results. It also reports that notebooks `02_features.ipynb` and `03_analysis.ipynb` ran cleanly, while `01_eda.ipynb` fails as committed because it uses a Google Colab path. A portable-path fix is proposed in the QA report but has not been applied there.
+The Phase 1 QA record is in [`docs/qa_report.md`](docs/qa_report.md), and [`docs/viva_drill.md`](docs/viva_drill.md) maps presentation questions to evidence in the repository. Phase 2 checks, Tanimoto results, clean-clone test results, and the dependency blocker for ablation training are recorded in [`docs/phase2_member5_qa.md`](docs/phase2_member5_qa.md).
 
 Key limitations to state alongside the results:
 
