@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.dl.member5_analysis import seed_variance_table
+from src.config import ROOT
+from src.dl.member5_analysis import _relative_path, seed_variance_table
 
 
 def test_seed_variance_uses_endpoint_average_per_seed():
@@ -25,3 +26,7 @@ def test_seed_variance_uses_endpoint_average_per_seed():
 def test_seed_variance_requires_all_summary_columns():
     with pytest.raises(ValueError, match="missing required"):
         seed_variance_table(pd.DataFrame({"model": ["mpnn"]}))
+
+
+def test_audit_paths_are_relative_to_project_root():
+    assert _relative_path(ROOT / "results" / "preds" / "sample.npy") == "results/preds/sample.npy"

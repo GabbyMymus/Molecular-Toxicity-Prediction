@@ -7,7 +7,7 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 
-from src.config import ENDPOINTS, RESULTS, SEEDS
+from src.config import ENDPOINTS, RESULTS, ROOT, SEEDS
 from src.data import load_clean
 from src.dl.split_io import load_split_named
 from src.evaluate import score
@@ -97,6 +97,14 @@ def _reference_frame(key: str, model: str, feature_set: str, split: str, seed: i
     return frame
 
 
+def _relative_path(path: Path) -> str:
+    """Return a repository-relative artifact path for portable audit CSVs."""
+    try:
+        return path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        return path.name
+
+
 def audit_saved_predictions(
     *,
     split: str = "scaffold",
@@ -125,7 +133,7 @@ def audit_saved_predictions(
             if not path.exists():
                 summaries.append({
                     "model": model, "feature_set": feature_set, "split": split,
-                    "seed": int(seed), "path": str(path), "status": "missing",
+                    "seed": int(seed), "path": _relative_path(path), "status": "missing",
                     "metrics_match_reference": np.nan,
                 })
                 continue
@@ -161,7 +169,7 @@ def audit_saved_predictions(
                 "feature_set": feature_set,
                 "split": split,
                 "seed": int(seed),
-                "path": str(path),
+                "path": _relative_path(path),
                 "status": "ok",
                 "n_test_molecules": len(prediction),
                 "n_endpoints": prediction.shape[1],

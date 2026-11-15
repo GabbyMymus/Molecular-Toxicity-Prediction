@@ -21,5 +21,3 @@ The run manifest and command generator are in \texttt{scripts/09\_run\_malhar\_a
 The saved probability arrays were checked against their split's test-label order and corresponding result CSVs. Every available file had shape $771\times12$, contained finite probabilities in $[0,1]$, and reproduced all per-endpoint label counts, ROC AUCs, and PR AUCs within $2\times10^{-6}$. The audit covers XGBoost and graph MPNN on both splits and H1 on the scaffold split. Seed variability is calculated after averaging over endpoints, so it reflects model randomness on one fixed split rather than split-to-split uncertainty.
 
 \input{tables/member5_seed_variance.tex}
-
-The H1 predictions and result rows were copied from the team branch \texttt{ranajeet/phase2} at commit \texttt{c10339827b7f509c42ed0d9f62d0f570a0b520d1}. The imported files are listed in \texttt{results/h1\_artifact\_provenance.json}; prediction counts and metrics were independently checked against that result CSV.
