@@ -1,0 +1,29 @@
+{
+  "mpnn|none": {
+    "hidden": 64,
+    "steps": 3,
+    "dropout": 0.2,
+    "weight_decay": 1e-05,
+    "lr": 0.001,
+    "edge_drop": 0.0
+  },
+  "gcn|none": {
+    "hidden": 256,
+    "layers": 3,
+    "dropout": 0.2,
+    "weight_decay": 1e-05,
+    "lr": 0.001
+  },
+  "fpmlp|morgan": {
+    "hidden": 1024,
+    "dropout": 0.5,
+    "weight_decay": 0.0001,
+    "lr": 0.001
+  },
+  "fpmlp|both": {
+    "hidden": 512,
+    "dropout": 0.5,
+    "weight_decay": 1e-05,
+    "lr": 0.001
+  }
+}

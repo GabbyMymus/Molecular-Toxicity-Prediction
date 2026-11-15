@@ -1,0 +1,10 @@
+{
+  "mpnn|none": {
+    "hidden": 64,
+    "steps": 3,
+    "dropout": 0.2,
+    "weight_decay": 1e-05,
+    "lr": 0.001,
+    "edge_drop": 0.0
+  }
+}
