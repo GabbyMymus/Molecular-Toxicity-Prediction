@@ -13,9 +13,29 @@ The mean endpoint PR AUC is higher in the most similar bin than in the least sim
 \end{figure}
 
 \subsection{Architecture ablations and shuffled-label control}
-All ablations use the frozen MPNN configuration in \texttt{results/best\_configs\_dl.json} (hidden size 64, three message-passing steps, dropout 0.2, learning rate $10^{-3}$, and weight decay $10^{-5}$) on the scaffold split with seeds 0--2. The predeclared comparisons change one property at a time: one step (A1), two steps (A2), bond features removed (A3), four steps, sum pooling, and mean pooling. The negative control permutes complete training-label rows across training molecules while leaving validation and test data unchanged; its mean test ROC AUC should be near 0.5, and a value above 0.55 warrants a leakage investigation.
+All ablations use the frozen MPNN configuration in \texttt{results/best\_configs\_dl.json} (hidden size 64, three message-passing steps, dropout 0.2, learning rate $10^{-3}$, and weight decay $10^{-5}$) on the scaffold split with seeds 0--2. The predeclared comparisons change one property at a time: message-passing depth, bond features, or graph readout. Each seed's metric is the mean over the 12 endpoints; the table reports the mean and sample standard deviation of those three seed-level means. All values are computed from \texttt{results/dl\_ablation\_test\_malhar.csv}.
 
-The run manifest and command generator are in \texttt{scripts/09\_run\_malhar\_ablations.py}. Ablation metrics are not reported here because this workspace does not have PyTorch or PyTorch Geometric installed and cannot reach the package index. The script writes results to \texttt{results/dl\_ablation\_test\_malhar.csv} once run in the Phase 2 environment; the result cells must be filled from that output before this section is treated as final.
+\begin{table*}[t]
+\centering
+\caption{Malhar's MPNN architecture ablations on the scaffold test split. Values are mean endpoint AUC $\pm$ sample SD across seeds 0--2, computed from the committed ablation CSV.}
+\label{tab:member5-ablation}
+\small
+\begin{tabular}{lcc}
+\toprule
+Variant & PR AUC & ROC AUC \\
+\midrule
+A1: depth 1 & $0.2846 \pm 0.0129$ & $0.7388 \pm 0.0107$ \\
+A2: depth 2 & $0.3007 \pm 0.0071$ & $0.7353 \pm 0.0096$ \\
+A3: no bonds & $0.2947 \pm 0.0437$ & $0.7439 \pm 0.0187$ \\
+P2: depth 4 & $0.2818 \pm 0.0172$ & $0.7311 \pm 0.0153$ \\
+P2: sum readout & $0.3125 \pm 0.0172$ & $0.7586 \pm 0.0156$ \\
+P2: mean readout & $0.3001 \pm 0.0043$ & $0.7391 \pm 0.0019$ \\
+C1: shuffled labels & $0.1382 \pm 0.0063$ & $0.5305 \pm 0.0302$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The shuffled-label control permutes complete training-label rows across molecules and leaves validation and test labels unchanged. Its three seed-level mean test ROC AUCs are 0.5038, 0.5246, and 0.5632. Although the three-seed mean is 0.5305, seed 2 exceeds the predeclared 0.55 threshold. This is a warning that warrants a leakage investigation; averaging across seeds does not remove it.
 
 \subsection{Prediction alignment and seed variability}
 The saved probability arrays were checked against their split's test-label order and corresponding result CSVs. Every available file had shape $771\times12$, contained finite probabilities in $[0,1]$, and reproduced all per-endpoint label counts, ROC AUCs, and PR AUCs within $2\times10^{-6}$. The audit covers XGBoost and graph MPNN on both splits and H1 on the scaffold split. Seed variability is calculated after averaging over endpoints, so it reflects model randomness on one fixed split rather than split-to-split uncertainty.

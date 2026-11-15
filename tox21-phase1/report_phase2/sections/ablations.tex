@@ -1,1 +1,26 @@
-% TODO ablations (Owner assigned in handbook)
+\section{Architecture Ablations}
+\label{sec:malhar-architecture-ablations}
+
+We evaluated predeclared architecture changes to the frozen graph MPNN on the scaffold split with seeds 0--2. The base configuration uses hidden size 64, three message-passing steps, dropout 0.2, learning rate $10^{-3}$, and weight decay $10^{-5}$. Each run changes one architecture property: message-passing depth, bond features, or graph readout. For each seed, endpoint ROC AUC and PR AUC are averaged over the 12 tasks; the table reports the mean and sample standard deviation across the three seed-level means. The values come from \texttt{results/dl\_ablation\_test\_malhar.csv}.
+
+\begin{table*}[t]
+\centering
+\caption{MPNN architecture ablations on the scaffold test split. Values are mean endpoint AUC $\pm$ sample SD across seeds 0--2.}
+\label{tab:malhar-architecture-ablations}
+\small
+\begin{tabular}{lcc}
+\toprule
+Variant & PR AUC & ROC AUC \\
+\midrule
+A1: depth 1 & $0.2846 \pm 0.0129$ & $0.7388 \pm 0.0107$ \\
+A2: depth 2 & $0.3007 \pm 0.0071$ & $0.7353 \pm 0.0096$ \\
+A3: no bonds & $0.2947 \pm 0.0437$ & $0.7439 \pm 0.0187$ \\
+P2: depth 4 & $0.2818 \pm 0.0172$ & $0.7311 \pm 0.0153$ \\
+P2: sum readout & $0.3125 \pm 0.0172$ & $0.7586 \pm 0.0156$ \\
+P2: mean readout & $0.3001 \pm 0.0043$ & $0.7391 \pm 0.0019$ \\
+C1: shuffled labels & $0.1382 \pm 0.0063$ & $0.5305 \pm 0.0302$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The shuffled-label control permuted complete training-label rows across molecules while leaving validation and test labels unchanged. Its seed-level mean test ROC AUCs were 0.5038, 0.5246, and 0.5632. The three-seed mean is 0.5305, but seed 2 exceeds the predeclared 0.55 threshold and warrants a leakage investigation.
