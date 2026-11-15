@@ -2,3 +2,5 @@
 /ranajeet.md
 .DS_Store
 tox21-phase1/data/processed/graphs.pt
+/.venv312
+/.venv

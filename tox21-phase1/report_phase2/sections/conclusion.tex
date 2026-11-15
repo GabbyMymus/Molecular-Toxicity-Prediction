@@ -1,0 +1,14 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this Phase~2 investigation, we conducted an empirical and theoretical evaluation of graph neural networks, multi-modal hybrids, and classical machine learning models for in silico molecular toxicity prediction on the Tox21 benchmark. 
+
+Our investigation yields four primary conclusions:
+\begin{enumerate}
+    \item \textbf{Learned Topologies Outperform Fixed Fingerprints in Neural Nets:} When evaluated under an identical multi-task neural training pipeline and provided with identical physicochemical descriptors, continuous message passing on molecular graphs (H1) outperforms a flat multi-layer perceptron on hashed Morgan fingerprints (FP-MLP) by $+0.0124$ mean PR~AUC and wins on 9 of 12 endpoints.
+    \item \textbf{Authentic Physicochemical Signals are Essential:} Our negative control using shuffled descriptors resulted in a catastrophic $28.3\%$ drop in test PR~AUC (from $0.3553$ to $0.2547$), confirming that global physicochemical descriptors supply vital molecular context that local message passing does not easily extract on small datasets.
+    \item \textbf{Tree Ensembles Remain Formidable Tabular Baselines:} Random Forest and XGBoost trained on combined circular fingerprints and 2D RDKit descriptors remain highly competitive with pure graph networks on datasets of $\approx$6,200 training compounds, underscoring the enduring value of expert-engineered physical priors in low-data chemical regimes.
+    \item \textbf{Late-Fusion Ensembling Unlocks Cross-Paradigm Synergy:} The H2 rank-average ensemble of XGBoost and H1 achieves unanimous superiority across all 12 toxicity endpoints over H1 ($p = 0.00049$) while delivering the lowest seed variance in the benchmark ($\sigma = 0.0011$). Fusing non-parametric tree decisions with continuous graph representations effectively bridges distinct chemical inductive biases without risk of data leakage.
+\end{enumerate}
+
+These findings demonstrate that the future of practical computational toxicology lies not in discarding classical descriptor engineering, but in harmonizing domain-specific physical descriptors with deep graph representation learning through rigorous, leak-free hybrid architectures.

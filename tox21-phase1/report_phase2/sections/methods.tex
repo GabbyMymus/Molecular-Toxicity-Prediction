@@ -1,0 +1,72 @@
+\section{Methods and Theoretical Formulation}
+\label{sec:methods}
+
+\subsection{Problem Formulation and Molecular Graph Representation}
+The Tox21 benchmark is formulated as a multi-task binary classification problem across $K=12$ distinct bioassays. Each chemical compound is defined by a molecular graph $G = (\mathcal{V}, \mathcal{E})$, where $\mathcal{V}$ denotes the set of atoms ($|\mathcal{V}| = N$) and $\mathcal{E}$ represents the directed covalent bonds. 
+
+Each atom $v \in \mathcal{V}$ is assigned an initial continuous feature vector $\mathbf{x}_v \in \mathbb{R}^{33}$ containing:
+\begin{itemize}
+    \item One-hot encoding of atom species (C, N, O, S, F, Cl, Br, I, P, and Other; 10 dimensions),
+    \item Explicit atom degree ($0$--$6$),
+    \item Total bonded hydrogen count ($0$--$4$),
+    \item Hybridization state ($\text{sp}, \text{sp}^2, \text{sp}^3, \text{sp}^3\text{d}, \text{sp}^3\text{d}^2$, and Other; 6 dimensions),
+    \item Formal charge, aromaticity boolean flag, in-ring boolean flag, and normalized atomic mass ($m_a / 100$).
+\end{itemize}
+Each bond $(v, w) \in \mathcal{E}$ is represented as two directed edges with feature vector $\mathbf{e}_{vw} \in \mathbb{R}^6$ encoding:
+\begin{itemize}
+    \item One-hot bond type (single, double, triple, aromatic; 4 dimensions),
+    \item Conjugation boolean flag, and in-ring boolean flag.
+\end{itemize}
+
+\subsection{Neural Message Passing (MPNN) Architecture}
+We adopt the general Message Passing Neural Network (MPNN) framework~\cite{gilmer2017neural}. The network operates in three continuous phases: initial projection, message propagation, and readout.
+
+\textbf{1. Initial Projection:} Raw atom features are projected into a continuous latent space of dimension $d = 64$:
+\begin{equation}
+\mathbf{h}_v^{(0)} = \text{ReLU}\left( \mathbf{W}_{\text{init}} \mathbf{x}_v + \mathbf{b}_{\text{init}} \right), \quad \mathbf{h}_v^{(0)} \in \mathbb{R}^d.
+\end{equation}
+
+\textbf{2. Message Passing Phase:} Over $T = 3$ discrete propagation steps, each atom updates its hidden state by collecting messages from its 1-hop topological neighborhood $\mathcal{N}(v)$. The message passing operation uses an edge network $\mathbf{A}(\mathbf{e}_{vw})$:
+\begin{equation}
+\mathbf{m}_v^{(t)} = \frac{1}{|\mathcal{N}(v)|} \sum_{w \in \mathcal{N}(v)} \mathbf{A}(\mathbf{e}_{vw}) \, \mathbf{h}_w^{(t-1)},
+\end{equation}
+where $\mathbf{A}: \mathbb{R}^6 \to \mathbb{R}^{d \times d}$ is parameterized as a two-layer multi-layer perceptron (MLP). The edge-dependent transformation ensures that double, triple, and aromatic bonds modulate information transfer differently from single bonds.
+
+\textbf{3. Recurrent Node Update:} To retain historical context and regulate information absorption across steps $t \in \{1, \dots, T\}$, the node state is updated via a Gated Recurrent Unit (GRU)~\cite{cho2014learning}:
+\begin{equation}
+\mathbf{h}_v^{(t)} = \text{GRU}\left( \mathbf{h}_v^{(t-1)}, \, \mathbf{m}_v^{(t)} \right).
+\end{equation}
+Reusing the identical GRU and edge network weights across all $T$ iterations enforces parameter efficiency ($|\Theta| \approx 628\text{k}$) and prevents oversmoothing.
+
+\textbf{4. Readout and Permutation Invariance:} To generate a fixed-size molecular embedding $\mathbf{z}_{\text{graph}}$ from variable-sized node sets $\{\mathbf{h}_v^{(T)}\}_{v=1}^N$, the readout function $\mathcal{R}$ must be strictly permutation-invariant:
+\begin{equation}
+\mathcal{R}\left( \pi(\mathbf{h}_1^{(T)}, \dots, \mathbf{h}_N^{(T)}) \right) = \mathcal{R}\left( \mathbf{h}_1^{(T)}, \dots, \mathbf{h}_N^{(T)} \right), \quad \forall \pi \in \mathcal{S}_N.
+\end{equation}
+We employ the Set2Set pooling mechanism~\cite{vinyals2015order}, which executes $M=3$ iterations of content-based attention over all node representations, outputting a pooled vector $\mathbf{z}_{\text{graph}} \in \mathbb{R}^{2d} = \mathbb{R}^{128}$.
+
+\subsection{Graph Convolutional Network (GCN) Baseline}
+As an architectural contrast, we evaluate a standard GCN~\cite{kipf2017gcn}. The GCN update is defined as:
+\begin{equation}
+\mathbf{H}^{(t)} = \text{ReLU}\left( \mathbf{\tilde{D}}^{-\frac{1}{2}} \mathbf{\tilde{A}} \mathbf{\tilde{D}}^{-\frac{1}{2}} \mathbf{H}^{(t-1)} \mathbf{W}^{(t)} \right),
+\end{equation}
+where $\mathbf{\tilde{A}} = \mathbf{A} + \mathbf{I}_N$ is the graph adjacency matrix with added self-loops, and $\mathbf{\tilde{D}}_{ii} = \sum_j \mathbf{\tilde{A}}_{ij}$. Unlike the MPNN, the GCN ignores bond feature vectors $\mathbf{e}_{vw}$ and treats all edges isotropically, serving as an architectural control for bond-dependent modulation.
+
+\subsection{Training Objective: Masked, Class-Weighted Loss}
+The Tox21 benchmark contains extensive missing labels ($\sim$20\% of all assay matrix entries). Treating unmeasured labels as negative (non-toxic) induces severe false-negative bias. We therefore formulate a masked, class-weighted binary cross-entropy loss:
+\begin{equation}
+\mathcal{L} = \frac{\sum_{i=1}^B \sum_{j=1}^{12} m_{ij} \cdot \ell_{ij}}{\sum_{i=1}^B \sum_{j=1}^{12} m_{ij} + \epsilon},
+\end{equation}
+where $m_{ij} = \mathbb{I}[y_{ij} \neq \text{NaN}]$ is a binary validity mask ($m_{ij}=0$ for missing values), and the per-label weighted cross-entropy is:
+\begin{equation}
+\ell_{ij} = -\left[ w_j y_{ij} \log(\hat{p}_{ij}) + (1 - y_{ij}) \log(1 - \hat{p}_{ij}) \right].
+\end{equation}
+Because active toxic compounds represent only $\approx 8\%$ of the dataset, positive instances are re-weighted by the endpoint-specific ratio computed strictly from the training split:
+\begin{equation}
+w_j = \min\left(50, \, \frac{N_{\text{neg}, j}^{\text{train}}}{N_{\text{pos}, j}^{\text{train}}}\right),
+\end{equation}
+capped at 50 to maintain numerical stability during backpropagation.
+
+\subsection{Why Scaffold Generalization is Challenging}
+Standard random splitting partitions compounds uniformly at random, allowing identical or near-identical Bemis--Murcko molecular frameworks~\cite{bemis1996properties} to appear in both training and evaluation splits. In contrast, Bemis--Murcko scaffold splitting clusters molecules by their cyclic ring and linker topological core, assigning entire scaffold clusters exclusively to the training ($N=6,167$), validation ($N=771$), or test ($N=771$) partitions.
+
+Scaffold splitting creates an authentic out-of-distribution evaluation: models cannot succeed by memorizing core scaffold-toxicity associations. Generalization requires the neural network to identify transferable sub-structural and physicochemical principles that govern biological activity across novel, unseen chemical families.
