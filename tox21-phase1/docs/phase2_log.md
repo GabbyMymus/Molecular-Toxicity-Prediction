@@ -434,3 +434,31 @@ git status --short
 - Results: none new.
 - Problems and fixes: none.
 - Open items: stale figure mean_pr_roc_scaffold; other figures unchecked; LaTeX not compiled.
+
+## R2b - Front and back matter rewrite (uncommitted, branch parrv/frontback-fix) - Sun Nov 15 22:40:08 IST 2026
+- Goal: rewrite abstract (main.tex), intro.tex, discussion.tex, conclusion.tex to match results.tex and hybrid.tex.
+- Commands run:
+git fetch origin main; git checkout -b parrv/frontback-fix origin/main
+python (parameter counts from src/dl/models.py with results/best_configs_dl.json; shuffled-label seed ROC from results/dl_ablation_test_malhar.csv)
+python edit of main.tex (abstract), sections/intro.tex, discussion.tex, conclusion.tex
+python (cite and ref check; abstract word count)
+git diff --stat
+- Files created or changed: report_phase2/main.tex (abstract only), sections/intro.tex, discussion.tex, conclusion.tex.
+- Commits: none
+- Results: parameter counts from code with the frozen configs: MPNN 628,300; H1 (213 descriptors) 672,076; GCN 210,700; FP-MLP both (2,261 inputs) 1,292,556. Shuffled-label C1 test ROC per seed 0.5038, 0.5246, 0.5632 (matches ablations.tex). Abstract about 171 source words. No missing cite keys or undefined refs in the four files.
+- Problems and fixes: the "~56k" parameter count Parrv mentioned does not appear in these four files and could not be tied to any model; not used.
+- Open items: UNVERIFIED items in the reply to Parrv (Jiang et al. content, background claims in intro paragraphs 1-3, validation.tex still a TODO stub).
+
+## R2b commit and PR - parameter counts verified, front/back matter pushed - Sun Nov 15 22:44:16 IST 2026
+- Goal: verify parameter counts with the repo's constructors, commit and push the rewrite, open PR.
+- Commands run:
+python scripts/count_params.py
+git add tox21-phase1/report_phase2/main.tex tox21-phase1/report_phase2/sections/intro.tex tox21-phase1/report_phase2/sections/discussion.tex tox21-phase1/report_phase2/sections/conclusion.tex tox21-phase1/scripts/count_params.py tox21-phase1/docs/phase2_log.md
+git commit -m "Report: rewrite abstract, intro, discussion, conclusion to match final results"
+git push -u origin parrv/frontback-fix
+gh pr create --base main --head parrv/frontback-fix
+- Files created or changed: scripts/count_params.py (new); the four report files and this log committed.
+- Commits: see git log (hash and PR URL in the reply to Parrv).
+- Results (scripts/count_params.py output): descriptor columns 213; Morgan+descriptor inputs 2261; D2 MPNN 628,300; H1 MPNN+desc 672,076; D1 GCN 210,700; D0 FP-MLP both 1,292,556. All equal the earlier counts; no text changed.
+- Problems and fixes: none.
+- Open items: same UNVERIFIED items as R2b (Jiang et al. content, intro background, validation.tex stub).
