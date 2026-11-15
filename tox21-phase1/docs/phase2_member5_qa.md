@@ -4,7 +4,6 @@
 
 - Working branch: `malhar/phase2`.
 - The fetched local base was `54910cd04de5234bd3119a9958e85bf75a608b46`; the GitHub branch `parrv/dl-engine` was checked and still points to that same commit. A shell `git pull` could not resolve `github.com` in this environment, so there were no upstream commits beyond the already-fetched base.
-- H1 (MPNN + descriptors) scaffold predictions were taken from `ranajeet/phase2` at `c10339827b7f509c42ed0d9f62d0f570a0b520d1`. Their Git blob hashes and metric verification are recorded in `results/h1_artifact_provenance.json`.
 
 ## Completed and checked
 
