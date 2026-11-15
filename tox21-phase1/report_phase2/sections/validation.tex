@@ -1,1 +1,23 @@
-% TODO validation (Owner assigned in handbook)
+\section{Technical Validation}
+\label{sec:validation}
+
+This section lists only checks that can be re-run from the repository.
+
+\paragraph{Configuration freeze.}
+The deep-learning configurations were frozen in commit \texttt{0aebd87}, whose only change is \texttt{results/best\_configs\_dl.json}; the deep-learning test-result files were committed afterwards. The Makefile target \texttt{dl-guard}, on which \texttt{dl-final}, \texttt{dl-ablate} and \texttt{dl-ensemble} depend, stops unless that file exists, is tracked and is identical to the committed version, and it prints that the configurations are frozen. The final and ablation modes of \texttt{src.dl.run} also exit unless the file exists. The commit history shows what was committed; it cannot show that no test evaluation was run locally before the freeze.
+
+\paragraph{Alignment and leakage tests.}
+\texttt{make phase2-test} runs four test files with \texttt{python -m pytest}; all 24 tests passed in our run.
+\begin{itemize}
+    \item \texttt{test\_graph\_alignment.py}: graph $i$ is row $i$ of the clean CSV (7,709 graphs), with identical labels and NaN pattern; split subsets keep row order and labels on both splits; atom counts match RDKit on 200 sampled molecules.
+    \item \texttt{test\_extra\_alignment.py}: the Morgan-plus-descriptor rows (2,261 columns) follow the graphs in split order on both splits; the features are finite and roughly standardized on the training rows.
+    \item \texttt{test\_gate0\_ranajeet.py}: row counts agree across the CSV, graphs and feature arrays; sampled SMILES, atom counts, labels and stored Morgan fingerprints match the CSV; the preprocessed descriptors have 213 columns; the scaffold split covers all rows without overlap; \texttt{attach\_extra} keeps row order, and shuffling the rows breaks it (negative control).
+    \item \texttt{test\_dl\_smoke.py}: the masked loss ignores missing labels and \texttt{mask\_missing=False} treats them as negatives; the positive weight is $n_{\text{neg}}/n_{\text{pos}}$ per endpoint with the cap; model output shapes, invariance to atom order, early stopping that restores the best weights, and reproducibility for a fixed seed.
+\end{itemize}
+The Phase~1 suite adds a check that no scaffold group spans two partitions and that the empty scaffold stays in one partition (\texttt{test\_splits.py}), that transforming new data leaves fitted descriptor statistics unchanged (\texttt{test\_features.py}), and that missing labels are excluded rather than filled with zero (\texttt{test\_evaluate.py}).
+
+\paragraph{Scaffold split and predictions.}
+The scaffold split has 6,167 training, 771 validation and 771 test molecules. Of the 7,709 molecules, 1,753 are acyclic and share the empty scaffold; all are in training, none in validation or test, so scaffold validation and test contain only ring-containing molecules. All 30 saved test-prediction files for XGBoost, FP-MLP, GCN, MPNN and H1 (both splits, seeds 0--2) have shape $771 \times 12$, contain only finite values, and reproduce the committed per-endpoint ROC and PR~AUC when re-scored against the test labels from the split file.
+
+\paragraph{Controls.}
+With descriptor rows permuted across molecules (same architecture and parameter count), H1's scaffold test PR~AUC falls from $0.3553$ to $0.2547$ (ROC~AUC $0.6951$), so its benefit depends on correct alignment between molecules and descriptor values. In the shuffled-label control, training labels are permuted across molecules and the MPNN is evaluated on unchanged test labels. Its test ROC~AUC is $0.5038$, $0.5246$ and $0.5632$ for seeds 0, 1 and 2 (mean $0.5305$, mean PR~AUC $0.1382$). Seed 2 is above the $0.55$ threshold set for this control. We have not investigated the cause, and averaging over seeds does not remove the warning.
