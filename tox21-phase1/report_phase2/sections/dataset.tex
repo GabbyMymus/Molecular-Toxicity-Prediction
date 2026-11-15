@@ -1,0 +1,55 @@
+\section{Dataset and Graph Construction}
+\label{sec:dataset-graph}
+
+We use the Tox21 screening dataset, which records outcomes for twelve toxicity
+assays across chemical compounds \cite{wu2018moleculenet,huang2016tox21}. The
+Phase~1 cleaning pipeline parsed the SMILES, retained the largest connected
+fragment, canonicalized structures, and merged duplicate molecules. Conflicting
+duplicate assay labels were marked unknown rather than assigned an arbitrary
+class. The resulting dataset contains 7,709 unique molecules. Labels are
+active, inactive, or unobserved; unobserved outcomes remain missing and are
+excluded independently for each endpoint during training and evaluation.
+
+The fixed scaffold partition contains 6,167 training, 771 validation, and 771
+test molecules. Molecules are represented as atom-bond graphs in the same row
+order as the cleaned CSV. Each atom is a node with 33 features: categorical
+encodings of element, degree, hydrogen count, and hybridization, together with
+formal charge, aromaticity, ring membership, and scaled atomic mass. Hydrogen
+atoms are represented by the total-hydrogen count on each heavy atom, not as
+separate nodes. Each chemical bond is represented by six attributes: four bond
+type indicators plus conjugation and ring-membership flags. Every bond is
+stored in both directions, allowing messages to travel between both endpoint
+atoms \cite{gilmer2017neural}.
+
+The cache contains 7,709 graphs. Molecules have a mean of 18.28 atoms (median
+16; range 1--132) and 19.03 bonds (median 16; range 0--145). Assay labels are
+both incomplete and imbalanced: observed positive rates range from 2.9\% to
+15.9\%, while 7.4\% to 25.8\% of molecule-assay pairs are unobserved. Table
+\ref{tab:tox21-coverage} reports the measured positive counts, labeled counts,
+and missing fractions. These properties motivate a masked, endpoint-wise loss
+and metrics, and make PR AUC informative alongside ROC AUC.
+
+\begin{table}[t]
+\centering
+\caption{Tox21 endpoint coverage and positive rates. Positive rate uses labeled molecules only.}
+\label{tab:tox21-coverage}
+\scriptsize
+\begin{tabular}{lrrrr}
+\hline
+Endpoint & Positive & Labeled & Positive rate & Missing \\
+\hline
+NR-AR & 304 & 7,141 & 4.3\% & 7.4\% \\
+NR-AR-LBD & 235 & 6,652 & 3.5\% & 13.7\% \\
+NR-AhR & 763 & 6,444 & 11.8\% & 16.4\% \\
+NR-Aromatase & 286 & 5,718 & 5.0\% & 25.8\% \\
+NR-ER & 781 & 6,103 & 12.8\% & 20.8\% \\
+NR-ER-LBD & 343 & 6,851 & 5.0\% & 11.1\% \\
+NR-PPAR-gamma & 185 & 6,354 & 2.9\% & 17.6\% \\
+SR-ARE & 915 & 5,739 & 15.9\% & 25.6\% \\
+SR-ATAD5 & 261 & 6,962 & 3.7\% & 9.7\% \\
+SR-HSE & 364 & 6,374 & 5.7\% & 17.3\% \\
+SR-MMP & 907 & 5,727 & 15.8\% & 25.7\% \\
+SR-p53 & 419 & 6,673 & 6.3\% & 13.4\% \\
+\hline
+\end{tabular}
+\end{table}
