@@ -8,7 +8,7 @@ We report final test performance averaged across three independent random seeds 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{figures/mean_pr_roc_scaffold.pdf}
-\caption{Mean PR~AUC and ROC~AUC on the Bemis--Murcko scaffold test set (error bars: seed standard deviation). Deep learning models are highlighted in blue; classical baselines in green. The H2 bar is the secondary XGBoost$+$H1 variant; the GCN, the plain MPNN and the primary H2 (XGBoost$+$FP-MLP) are not shown in this figure, and Table~\ref{tab:main_results} is the complete record.}
+\caption{Mean PR~AUC and ROC~AUC on the Bemis--Murcko scaffold test set (error bars: seed standard deviation). Deep and hybrid models are highlighted in blue; Phase~1 baselines in green. The 12 rows are those of Table~\ref{tab:main_results}, including the GCN, the plain MPNN, the primary H2 (XGBoost$+$FP-MLP) and the secondary H2 (XGBoost$+$H1). Each value is the mean over endpoints per seed, averaged over seeds 0--2. The horizontal axes do not start at zero.}
 \label{fig:mean_scaffold}
 \end{figure}
 
